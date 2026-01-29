@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="DorisPlugin">
+    <output-path>$USER_HOME$/Downloads/paper1.21.11server/plugins</output-path>
+    <root id="archive" name="DorisPlugin.jar">
+      <element id="module-output" name="DorisPlugin" />
+    </root>
+  </artifact>
+</component>

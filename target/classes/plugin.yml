@@ -1,0 +1,9 @@
+name: DorisPlugin
+version: '1.0-SNAPSHOT'
+main: org.exam.dorisPlugin.Main
+api-version: '1.21'
+commands:
+  hello:
+    description: 인사하기
+  도:
+    description: doris plugin
