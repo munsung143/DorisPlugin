@@ -3,7 +3,6 @@ version: '1.0-SNAPSHOT'
 main: org.exam.dorisPlugin.Main
 api-version: '1.21'
 commands:
-  hello:
-    description: 인사하기
   도:
-    description: doris plugin
+    description: 아이템 옵션을 설정합니다
+    usage: /도

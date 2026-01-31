@@ -7,6 +7,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.type.Switch;
@@ -15,12 +16,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.persistence.ListPersistentDataTypeProvider;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -34,12 +37,10 @@ public class ItemSettingCommandManager {
 
     private String[] args;
     private CommandSender sender;
-
     private ItemStack handItem;
-
     private RegistryAccess RegiAccess = RegistryAccess.registryAccess();
-
     private YamlConfiguration message;
+    private ItemMeta meta;
 
     public ItemSettingCommandManager(CommandSender sender, String[] args, YamlConfiguration message){
         this.args = args;
@@ -56,41 +57,6 @@ public class ItemSettingCommandManager {
         List<String> str = message.getStringList(path);
         for (String line : str) {
             sender.sendMessage(line);
-        }
-    }
-    public void Start(){
-        if (args.length < 1){
-            sendMessage("messages.do.usage");
-            return;
-        }
-        switch (args[0]){
-            case "정보":
-                sendMessage("messages.do.usage");
-                break;
-            case "인첸트":
-                SetEnchantment();
-                break;
-            case "이름":
-                SetItemName();
-                break;
-            case "설명":
-                SetItemLore();
-                break;
-            case "속성":
-                SetItemAttribute();
-                break;
-            case "색상":
-                SetItemColor();
-                break;
-            case "스택":
-                SetMaxStack();
-                break;
-            case "착용버프":
-                SetPotionPassive();
-                break;
-            default:
-                sendMessage("messages.do.usage");
-                break;
         }
     }
     private boolean IsHandItemAir(){
@@ -110,44 +76,78 @@ public class ItemSettingCommandManager {
         }
         return inputBuilder.toString();
     }
-    public void SetItemName(){
-        if (args.length < 2){
-            sendMessage("messages.do.name.usage");
-            return;
+    private boolean CheckArgsLength(int length, String message){
+        if (args.length < length){
+            sendMessage(message);
+            return true;
         }
+        return false;
+    }
+    public void Start(){
+        meta = handItem.getItemMeta();
+        if (CheckArgsLength(1, "messages.do.usage")) return;
+        switch (args[0]){
+            case "인첸트": SetEnchantment(); break;
+            case "이름": SetItemName(); break;
+            case "설명": SetItemLore(); break;
+            case "속성": SetItemAttribute(); break;
+            case "색상": SetItemColor(); break;
+            case "스택": SetMaxStack(); break;
+            case "착용버프": SetPotionPassive(); break;
+            case "착용": SetEquip();break;
+            default: sendMessage("messages.do.usage"); break;
+        }
+    }
+    public void SetItemLore(){
+        if (CheckArgsLength(2, "messages.do.lore.usage")) return;
+        switch (args[1]){
+            case "추가": AddLore(); break;
+            case "삭제": DeleteLore(); break;
+            case "삽입", "변경": InsertLore(); break;
+            default: sendMessage("messages.do.lore.usage"); break;
+        }
+    }
+    public void SetItemAttribute(){
+        if (CheckArgsLength(2, "messages.do.attribute.usage")) return;
+        switch (args[1]){
+            case "목록": sendMessage("messages.do.attribute.list"); break;
+            case "기본데미지","기본공격속도": SetBaseAttribute(); break;
+            case "초기화": ClearAttribute(); break;
+            default: SetAttribute(); break;
+        }
+    }
+    public void SetPotionPassive(){
+        if (CheckArgsLength(2, "messages.do.potion_passive.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
+        }
+        switch (args[1]){
+            case "추가": SetPotionPassiveAdd(); break;
+            case "제거": SetPotionPassiveRemove(); break;
+            case "확인": SetPotionPassiveCheck(); break;
+            default: sendMessage("messages.do.potion_passive_usage"); break;
+        }
+    }
+    private void SetEquip(){
+        if (CheckArgsLength(2, "messages.do.equip.usage")) return;
+        switch (args[1]){
+            case "부위": SetEquipSlot(); break;
+            case "소리": SetEquipSound(); break;
+            case "모델": SetEquipModel(); break;
+            default: sendMessage("messages.do.equip.usage");
+        }
+    }
+    public void SetItemName(){
+        if (CheckArgsLength(2, "messages.do.name.usage")) return;
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(1));
         Component cmp = builder.Build();
         meta.customName(cmp);
         handItem.setItemMeta(meta);
     }
-    public void SetItemLore(){
-        if (args.length < 2){
-            sendMessage("messages.do.lore.usage");
-            return;
-        }
-        if (args[1].equalsIgnoreCase("추가")){
-            AddLore();
-        }
-        else if (args[1].equalsIgnoreCase("삭제")){
-            DeleteLore();
-        }
-        else if (args[1].equalsIgnoreCase("삽입") || args[1].equalsIgnoreCase("변경")){
-            InsertLore();
-        }
-        else {
-            sendMessage("messages.do.lore.usage");
-        }
-    }
 
     public void AddLore(){
-        if (args.length < 3){
-            sendMessage("messages.do.lore.usage");
-            return;
-        }
+        if (CheckArgsLength(3, "messages.do.lore.usage")) return;
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(2));
         Component cmp = builder.Build();
         List<Component> existLores = meta.lore();
@@ -161,7 +161,6 @@ public class ItemSettingCommandManager {
     }
     public void DeleteLore(){
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         List<Component> existLores = meta.lore();
         if (existLores == null){
             sender.sendMessage("설명이 없습니다");
@@ -190,12 +189,8 @@ public class ItemSettingCommandManager {
 
     }
     public void InsertLore(){
-        if (args.length < 4){
-            sendMessage("messages.do.lore.usage");
-            return;
-        }
+        if (CheckArgsLength(4, "messages.do.lore.usage")) return;
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         List<Component> existLores = meta.lore();
         if (existLores == null){
             sender.sendMessage("설명이 없습니다");
@@ -223,8 +218,7 @@ public class ItemSettingCommandManager {
         handItem.setItemMeta(meta);
     }
     public void SetEnchantment(){
-        if (args.length < 2){
-            sendMessage("messages.do.enchant.usage");
+        if (CheckArgsLength(2, "messages.do.enchant.usage")){
             sender.sendMessage(Arrays.toString(EnchantType.values()));
             return;
         }
@@ -246,33 +240,12 @@ public class ItemSettingCommandManager {
         }
         handItem.addUnsafeEnchantment(enchant, level);
     }
-    public void SetItemAttribute(){
-        if (args.length < 2){
-            sendMessage("messages.do.attribute.usage");
-            return;
-        }
-        if (args[1].equalsIgnoreCase("목록")){
-            sendMessage("messages.do.attribute.list");
-            return;
-        }
+    private void SetAttribute(){
+        if (CheckArgsLength(5, "message.do.attribute.usage")) return;
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         EquipmentSlotGroup slot;
         AttributeModifier.Operation operation;
         double amount = 0;
-        if (args[1].equalsIgnoreCase("초기화")){
-            meta.setAttributeModifiers(null);
-            handItem.setItemMeta(meta);
-            return;
-        }
-        else if (args[1].equalsIgnoreCase("기본데미지") || args[1].equalsIgnoreCase("기본공격속도")){
-            SetBaseAttribute();
-            return;
-        }
-        if (args.length < 5){
-            sendMessage("messages.do.attribute.usage");
-            return;
-        }
         if (!AttributeType.ContainsKey(args[1])){
             sender.sendMessage("잘못된 속성");
             return;
@@ -281,42 +254,10 @@ public class ItemSettingCommandManager {
         if (attribute == null){
             return;
         }
-        switch (args[2]){
-            case "전체":
-                slot = EquipmentSlotGroup.ANY;
-                break;
-            case "갑옷", "옷":
-                slot = EquipmentSlotGroup.ARMOR;
-                break;
-            case "동물":
-                slot = EquipmentSlotGroup.BODY;
-                break;
-            case "상의","상체":
-                slot = EquipmentSlotGroup.CHEST;
-                break;
-            case "하의","바지":
-                slot = EquipmentSlotGroup.LEGS;
-                break;
-            case "신발","발":
-                slot = EquipmentSlotGroup.FEET;
-                break;
-            case "손":
-                slot = EquipmentSlotGroup.HAND;
-                break;
-            case "머리","투구","모자":
-                slot = EquipmentSlotGroup.HEAD;
-                break;
-            case "오른손":
-                slot = EquipmentSlotGroup.MAINHAND;
-                break;
-            case "왼손":
-                slot = EquipmentSlotGroup.OFFHAND;
-                break;
-            case "안장":
-                slot = EquipmentSlotGroup.SADDLE;
-                break;
-            default:
-                return;
+        slot = SlotType.GetSlotGroup(args[2]);
+        if (slot == null){
+            sender.sendMessage("잘못된 슬롯");
+            return;
         }
         switch (args[3]){
             case "더하기":
@@ -350,13 +291,17 @@ public class ItemSettingCommandManager {
         meta.removeAttributeModifier(attribute, modifier);
         if (amount > 0 || amount < 0) meta.addAttributeModifier(attribute, modifier);
         handItem.setItemMeta(meta);
+
+    }
+    private void ClearAttribute(){
+        if (IsHandItemAir()) return;
+        meta.setAttributeModifiers(null);
+        handItem.setItemMeta(meta);
     }
 
     public void SetBaseAttribute(){
-        if (args.length < 3){
-            sendMessage("messages.do.attribute.usage");
-            return;
-        }
+        if (CheckArgsLength(3, "message.do.attribute.usage")) return;
+        if (IsHandItemAir()) return;
         Attribute attribute = Attribute.ATTACK_DAMAGE;
         String str = "base_attack_damage";
         double amount = 0;
@@ -370,7 +315,6 @@ public class ItemSettingCommandManager {
         catch (Exception e){
             return;
         }
-        ItemMeta meta = handItem.getItemMeta();
         NamespacedKey key = NamespacedKey.fromString(str, null);
         AttributeModifier modifier = new AttributeModifier(key, amount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND);
         meta.removeAttributeModifier(attribute, modifier);
@@ -379,10 +323,8 @@ public class ItemSettingCommandManager {
     }
 
     public void SetMaxStack(){
-        if (args.length < 2){
-            sendMessage("messages.do.stack.usage");
-            return;
-        }
+        if (CheckArgsLength(2, "messages.do.stack.usage")) return;
+        if (IsHandItemAir()) return;
         int amount = 0;
         try {
             amount = Integer.parseInt(args[1]);
@@ -393,18 +335,13 @@ public class ItemSettingCommandManager {
         if (amount < 1){
             return;
         }
-        ItemMeta meta = handItem.getItemMeta();
         meta.setMaxStackSize(amount);
         handItem.setItemMeta(meta);
     }
 
     public void SetItemColor(){
-        if (args.length < 2){
-            sendMessage("messages.do.color.usage");
-            return;
-        }
-
-        ItemMeta meta = handItem.getItemMeta();
+        if (CheckArgsLength(2, "messages.do.color.usage")) return;
+        if (IsHandItemAir()) return;
         Color color = null;
         if (!args[1].equalsIgnoreCase("초기화")){
             if (!PluginUtil.IsRGB(args[1])){
@@ -424,44 +361,9 @@ public class ItemSettingCommandManager {
         handItem.setItemMeta(meta);
 
     }
-    public void SetCode(){
-        ItemMeta meta = handItem.getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = NamespacedKey.fromString("potion_passive", Main.plugin);
-        if (args.length < 2){
-            String str = container.get(key, PersistentDataType.STRING);
-            if (str != null) sender.sendMessage(str);
-            return;
-        }
-        List<int[]> li = new ArrayList<>();
-        li.add(new int[]{5, 7});
-        li.add(new int[]{3, 8});
-        container.set(key, PersistentDataType.LIST.integerArrays(), li);
-        handItem.setItemMeta(meta);
-    }
-    public void SetPotionPassive(){
-        if (args.length < 2){
-            sendMessage("messages.do.potion_passive.usage");
-            sender.sendMessage(Arrays.toString(EffectType.values()));
-
-            return;
-        }
-        switch (args[1]){
-            case "추가":
-                SetPotionPassiveAdd();
-                break;
-            case "제거":
-                SetPotionPassiveRemove();
-                break;
-            case "확인":
-                SetPotionPassiveCheck();
-                break;
-        }
-    }
     public void SetPotionPassiveAdd(){
-        if (args.length < 5){
-            sendMessage("messages.do.potion_passive.usage");
-            return;
+        if (CheckArgsLength(5, "messages.do.potion_passive.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
         }
         if (IsHandItemAir()) return;
         String key = "";
@@ -503,7 +405,6 @@ public class ItemSettingCommandManager {
             return;
         }
 
-        ItemMeta meta = handItem.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         List<int[]> list = container.get(namespacedKey, PersistentDataType.LIST.integerArrays());
         if (list == null){
@@ -527,9 +428,8 @@ public class ItemSettingCommandManager {
 
     }
     public void SetPotionPassiveRemove(){
-        if (args.length < 4){
-            sendMessage("messages.do.potion_passive.usage");
-            return;
+        if (CheckArgsLength(4, "messages.do.potion_passive.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
         }
         if (IsHandItemAir()) return;
         String key = "";
@@ -558,8 +458,6 @@ public class ItemSettingCommandManager {
             return;
         }
         effectCode = EffectType.GetCode(args[3]);
-
-        ItemMeta meta = handItem.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         List<int[]> list = container.get(namespacedKey, PersistentDataType.LIST.integerArrays());
         if (list == null){
@@ -585,7 +483,6 @@ public class ItemSettingCommandManager {
     }
     public void SetPotionPassiveCheck(){
         if (IsHandItemAir()) return;
-        ItemMeta meta = handItem.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         SendPassiveCheck("§b착용 효과:", "potion_passive_armor", container);
         SendPassiveCheck("§b오른손 효과:", "potion_passive_mainhand", container);
@@ -609,6 +506,35 @@ public class ItemSettingCommandManager {
             }
         }
 
+    }
+    private void SetEquipSlot(){
+        if(CheckArgsLength(3, "messages.do.equip.usage")) return;
+        if (IsHandItemAir()) return;
+        EquipmentSlot slot = SlotType.GetSlot(args[2]);
+        if (slot == null) return;
+        EquippableComponent ec = meta.getEquippable();
+        ec.setSlot(slot);
+        meta.setEquippable(ec);
+        handItem.setItemMeta(meta);
+
+    }
+    private void SetEquipSound(){
+        if(CheckArgsLength(3, "messages.do.equip.usage")) return;
+        if (IsHandItemAir()) return;
+        Sound sound = RegiAccess.getRegistry(RegistryKey.SOUND_EVENT).get(NamespacedKey.minecraft(args[2]));
+        EquippableComponent ec = meta.getEquippable();
+        ec.setEquipSound(sound);
+        meta.setEquippable(ec);
+        handItem.setItemMeta(meta);
+
+    }
+    private void SetEquipModel(){
+        if(CheckArgsLength(3, "messages.do.equip.usage")) return;
+        if (IsHandItemAir()) return;
+        EquippableComponent ec = meta.getEquippable();
+        ec.setModel(NamespacedKey.minecraft(args[2]));
+        meta.setEquippable(ec);
+        handItem.setItemMeta(meta);
     }
 
 
