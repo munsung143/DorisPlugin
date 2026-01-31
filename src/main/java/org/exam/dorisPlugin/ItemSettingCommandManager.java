@@ -20,6 +20,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -28,6 +29,8 @@ import org.bukkit.persistence.ListPersistentDataTypeProvider;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,6 +86,14 @@ public class ItemSettingCommandManager {
         }
         return false;
     }
+    private Integer parseInt(String arg, int min, int max) {
+        try {
+            int value = Integer.parseInt(arg);
+            return value >= min && value <= max ? value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public void Start(){
         meta = handItem.getItemMeta();
         if (CheckArgsLength(1, "messages.do.usage")) return;
@@ -95,6 +106,9 @@ public class ItemSettingCommandManager {
             case "스택": SetMaxStack(); break;
             case "착용버프": SetPotionPassive(); break;
             case "착용": SetEquip();break;
+            case "모델": SetModel(); break;
+            case "내구도": SetDurability(); break;
+            case "포션": SetPotion(); break;
             default: sendMessage("messages.do.usage"); break;
         }
     }
@@ -136,6 +150,15 @@ public class ItemSettingCommandManager {
             default: sendMessage("messages.do.equip.usage");
         }
     }
+    private void SetDurability(){
+        if (CheckArgsLength(2, "messages.do.durability.usage")) return;
+        switch (args[1]){
+            case "무한": SetUnbreakable(); break;
+            case "최대": SetMaxDurability(); break;
+            case "감소": SetCurrentDurability(); break;
+            default: sendMessage("messages.do.durability.usage"); break;
+        }
+    }
     public void SetItemName(){
         if (CheckArgsLength(2, "messages.do.name.usage")) return;
         if (IsHandItemAir()) return;
@@ -166,23 +189,14 @@ public class ItemSettingCommandManager {
             sender.sendMessage("설명이 없습니다");
             return;
         }
-        int index = -1;
+        Integer index = null;
         if (args.length < 3){
             existLores.removeLast();
         }
         else{
-            try {
-                index = Integer.parseInt(args[2]);
-            }
-            catch (Exception e){
-                sender.sendMessage("숫자를 입력하세요");
-                return;
-            }
-            if (index < 0 || index >= existLores.size()){
-                sender.sendMessage("범위 초과");
-                return;
-            }
-            existLores.remove(index);
+            index = parseInt(args[2], 0, existLores.size() - 1);
+            if (index == null) return;
+            existLores.remove(index.intValue());
         }
         meta.lore(existLores);
         handItem.setItemMeta(meta);
@@ -196,18 +210,8 @@ public class ItemSettingCommandManager {
             sender.sendMessage("설명이 없습니다");
             return;
         }
-        int index = -1;
-        try {
-            index = Integer.parseInt(args[2]);
-        }
-        catch (Exception e){
-            sender.sendMessage("숫자를 입력하세요");
-            return;
-        }
-        if (index < 0 || index >= existLores.size()){
-            sender.sendMessage("범위 초과");
-            return;
-        }
+        Integer index = parseInt(args[2], 0, existLores.size() - 1);
+        if (index == null) return;
         TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(3));
         Component cmp = builder.Build();
         existLores.add(index, cmp);
@@ -231,12 +235,10 @@ public class ItemSettingCommandManager {
         if (enchant == null){
             return;
         }
-        int level = 1;
+        Integer level = 1;
         if (args.length > 2){
-            try {
-                level = Integer.parseInt(args[2]);
-            }
-            catch (Exception e){ }
+            level = parseInt(args[2], 0, Integer.MAX_VALUE);
+            if (level == null) return;
         }
         handItem.addUnsafeEnchantment(enchant, level);
     }
@@ -325,16 +327,8 @@ public class ItemSettingCommandManager {
     public void SetMaxStack(){
         if (CheckArgsLength(2, "messages.do.stack.usage")) return;
         if (IsHandItemAir()) return;
-        int amount = 0;
-        try {
-            amount = Integer.parseInt(args[1]);
-        }
-        catch (Exception e){
-            return;
-        }
-        if (amount < 1){
-            return;
-        }
+        Integer amount = parseInt(args[1], 1, 64);
+        if (amount == null) return;
         meta.setMaxStackSize(amount);
         handItem.setItemMeta(meta);
     }
@@ -368,7 +362,6 @@ public class ItemSettingCommandManager {
         if (IsHandItemAir()) return;
         String key = "";
         int effectCode = 0;
-        int level = 0;
         switch (args[2]){
             case "갑옷":
                 key = "potion_passive_armor";
@@ -393,17 +386,8 @@ public class ItemSettingCommandManager {
             return;
         }
         effectCode = EffectType.GetCode(args[3]);
-        try {
-            level = Integer.parseInt(args[4]);
-        }
-        catch (Exception e){
-            sender.sendMessage("정확한 레벨 입력");
-            return;
-        }
-        if (level < 0){
-            sender.sendMessage("0 이상의 레벨 입력");
-            return;
-        }
+        Integer level = parseInt(args[4], 0, 32767);
+        if (level == null) return;
 
         PersistentDataContainer container = meta.getPersistentDataContainer();
         List<int[]> list = container.get(namespacedKey, PersistentDataType.LIST.integerArrays());
@@ -535,6 +519,53 @@ public class ItemSettingCommandManager {
         ec.setModel(NamespacedKey.minecraft(args[2]));
         meta.setEquippable(ec);
         handItem.setItemMeta(meta);
+    }
+    private void SetModel(){
+        if(CheckArgsLength(2, "messages.do.model.usage")) return;
+        if (IsHandItemAir()) return;
+        meta.setItemModel(NamespacedKey.minecraft(args[1]));
+        handItem.setItemMeta(meta);
+    }
+    private void SetMaxDurability(){
+        if (CheckArgsLength(3, "messages.do.stack.usage")) return;
+        if (IsHandItemAir()) return;
+        Integer amount = parseInt(args[2], 1, Integer.MAX_VALUE);
+        if (amount == null) return;
+        if (meta instanceof Damageable damageable){
+            damageable.setMaxDamage(amount);
+            handItem.setItemMeta(damageable);
+        }
+    }
+    private void SetUnbreakable(){
+        if (IsHandItemAir()) return;
+        meta.setUnbreakable(!meta.isUnbreakable());
+        handItem.setItemMeta(meta);
+    }
+    private void SetCurrentDurability(){
+        if (CheckArgsLength(3, "messages.do.stack.usage")) return;
+        if (IsHandItemAir()) return;
+        Integer amount = parseInt(args[2], 0, Integer.MAX_VALUE);
+        if (amount == null) return;
+        if (meta instanceof Damageable damageable){
+            damageable.setDamage(amount);
+            handItem.setItemMeta(damageable);
+        }
+
+    }
+    private void SetPotion(){
+        if (CheckArgsLength(4, "messages.do.potion.usage")) return;
+        if (IsHandItemAir()) return;
+        if (meta instanceof PotionMeta potionMeta){
+            if (!EffectType.HasCode(args[1])) return;
+            PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[1]));
+            Integer amp = parseInt(args[2], 0, 32767);
+            if (amp == null) return;
+            Integer dur = parseInt(args[3], 0, Integer.MAX_VALUE);
+            if (dur == null) return;
+            PotionEffect effect = new PotionEffect(type, dur, amp);
+            potionMeta.addCustomEffect(effect, true);
+
+        }
     }
 
 
