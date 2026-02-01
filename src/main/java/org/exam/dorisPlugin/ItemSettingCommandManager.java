@@ -8,6 +8,9 @@ import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
+import io.papermc.paper.registry.set.RegistrySet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Color;
@@ -39,10 +42,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import javax.swing.border.EmptyBorder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ItemSettingCommandManager {
 
@@ -117,7 +117,7 @@ public class ItemSettingCommandManager {
             case "모델": SetModel(); break;
             case "내구도": SetDurability(); break;
             case "포션": SetPotion(); break;
-            case "사용": SetConsume(); break;
+            case "소비": SetConsume(); break;
             default: sendMessage("messages.do.usage"); break;
         }
     }
@@ -195,6 +195,7 @@ public class ItemSettingCommandManager {
         switch (args[2]){
             case "추가": AddConsumePotionEffect(); break;
             case "제거": RemoveConsumePotionEffect(); break;
+            case "확률": SetConsumePotionEffectChance(); break;
             default: sendMessage("messages.do.consume.usage"); break;
         }
     }
@@ -751,26 +752,194 @@ public class ItemSettingCommandManager {
         }
         Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
         Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
 
-        if (!EffectType.HasCode(args[1])) return;
-        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[1]));
-        Integer amp = parseInt(args[2], 0, 32767);
-        if (amp == null) return;
-        Integer dur = parseInt(args[3], 0, Integer.MAX_VALUE);
-        if (dur == null) return;
-        PotionEffect effect = new PotionEffect(type, dur, amp);
+        if (!EffectType.HasCode(args[3])) {
+            sender.sendMessage("정확한 효과 입력");
+            return;
+        }
+        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[3]));
+        Integer amp = parseInt(args[4], 0, 32767);
+        if (amp == null) {
+            sender.sendMessage("정확한 레벨값 입력");
+            return;
+        }
+        Integer dur = parseInt(args[5], 0, Integer.MAX_VALUE);
+        if (dur == null) {
+            sender.sendMessage("정확한 지속시간 입력");
+            return;
+        }
+        PotionEffect potion = new PotionEffect(type, dur, amp);
+        List<PotionEffect> potionEffects = new ArrayList<>();
+        boolean isExist = false;
+        float prob = 1;
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.ApplyStatusEffects ce){
+                potionEffects = new ArrayList<>(ce.effects());
+                prob = ce.probability();
+                effects.remove(ce);
+                builder.effects(effects);
+                isExist = true;
+                break;
+            }
+        }
+        if (isExist){
+            for (PotionEffect p : potionEffects){
+                if (p.getType() == type){
+                    potionEffects.remove(p);
+                    break;
+                }
+            }
+        }
+        potionEffects.add(potion);
+        builder.addEffect(ConsumeEffect.applyStatusEffects(potionEffects, prob));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+        sender.sendMessage("아이템 포션 효과를 수정했습니다.");
 
     }
     private void RemoveConsumePotionEffect(){
+        if (CheckArgsLength(4, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+
+        if (!EffectType.HasCode(args[3])) return;
+        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[3]));
+        List<PotionEffect> potionEffects = new ArrayList<>();
+        boolean isExist = false;
+        float prob = 1;
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.ApplyStatusEffects ce){
+                potionEffects = new ArrayList<>(ce.effects());
+                prob = ce.probability();
+                effects.remove(ce);
+                builder.effects(effects);
+                isExist = true;
+                break;
+            }
+        }
+        if (isExist){
+            for (PotionEffect p : potionEffects){
+                if (p.getType() == type){
+                    potionEffects.remove(p);
+                    break;
+                }
+            }
+        }
+        else {
+            return;
+        }
+        builder.addEffect(ConsumeEffect.applyStatusEffects(potionEffects, prob));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
     private void SetConsumePotionEffectChance(){
+        if (CheckArgsLength(4, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+        float prob;
+        try {
+            prob = Float.parseFloat(args[3]);
+            if (prob < 0) return;
+            prob /= 100;
+        } catch (Exception e) { return; }
+        List<PotionEffect> potionEffects = new ArrayList<>();
+        boolean isExist = false;
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.ApplyStatusEffects ce){
+                potionEffects = new ArrayList<>(ce.effects());
+                effects.remove(ce);
+                builder.effects(effects);
+                isExist = true;
+                break;
+            }
+        }
+        if (!isExist) return;
+        builder.addEffect(ConsumeEffect.applyStatusEffects(potionEffects, prob));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
     private void AddConsumePotionRemoveEffect(){
+        if (CheckArgsLength(4, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+
+        if (!EffectType.HasCode(args[3])) return;
+        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[3]));
+        Collection<TypedKey<PotionEffectType>> potionEffects = new ArrayList<>();
+
+        RegistryKeySet<PotionEffectType> potionEffectsKeySet;
+
+        boolean isExist = false;
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.RemoveStatusEffects ce){
+                potionEffects = new ArrayList<>(ce.removeEffects().values());
+                effects.remove(ce);
+                builder.effects(effects);
+                isExist = true;
+                break;
+            }
+        }
+        if (isExist){
+            for (TypedKey<PotionEffectType> p : potionEffects){
+                if (p.key().toString().equals(type.key().toString())){
+                    sender.sendMessage("이미 해당 효과가 존재함.");
+                    return;
+                }
+            }
+        }
+        potionEffects.add(TypedKey.create(RegistryKey.MOB_EFFECT, type.key()));
+        potionEffectsKeySet = RegistrySet.keySet(RegistryKey.MOB_EFFECT, potionEffects);
+        builder.addEffect(ConsumeEffect.removeEffects(potionEffectsKeySet));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
     private void RemoveConsumePotionRemoveEffect(){
+        if (CheckArgsLength(4, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+
+        if (!EffectType.HasCode(args[3])) return;
+        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[3]));
+        Collection<TypedKey<PotionEffectType>> potionEffects = new ArrayList<>();
+
+        RegistryKeySet<PotionEffectType> potionEffectsKeySet;
+
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.RemoveStatusEffects ce){
+                potionEffects = new ArrayList<>(ce.removeEffects().values());
+                effects.remove(ce);
+                builder.effects(effects);
+                break;
+            }
+        }
+        potionEffects.remove(TypedKey.create(RegistryKey.MOB_EFFECT, type.key()));
+        potionEffectsKeySet = RegistrySet.keySet(RegistryKey.MOB_EFFECT, potionEffects);
+        builder.addEffect(ConsumeEffect.removeEffects(potionEffectsKeySet));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
 
