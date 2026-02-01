@@ -1,5 +1,11 @@
 package org.exam.dorisPlugin;
 
+import io.papermc.paper.datacomponent.DataComponentBuilder;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Consumable;
+import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
+import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -32,9 +38,11 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import javax.swing.border.EmptyBorder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class ItemSettingCommandManager {
 
@@ -109,6 +117,7 @@ public class ItemSettingCommandManager {
             case "모델": SetModel(); break;
             case "내구도": SetDurability(); break;
             case "포션": SetPotion(); break;
+            case "사용": SetConsume(); break;
             default: sendMessage("messages.do.usage"); break;
         }
     }
@@ -157,6 +166,44 @@ public class ItemSettingCommandManager {
             case "최대": SetMaxDurability(); break;
             case "감소": SetCurrentDurability(); break;
             default: sendMessage("messages.do.durability.usage"); break;
+        }
+    }
+    private void SetPotion(){
+        if (CheckArgsLength(2, "messages.do.potion.usage")) return;
+        switch (args[1]){
+            case "제거": RemovePotion(); break;
+            default: AddPotion(); break;
+        }
+    }
+    private void SetConsume(){
+        if (CheckArgsLength(2, "messages.do.consume.usage")) return;
+        switch (args[1]){
+            case "설정": SetConsumable(); break;
+            case "시간": SetConsumeSeconds(); break;
+            case "소리": SetConsumeSound(); break;
+            case "애니메이션": SetConsumeAnim(); break;
+            case "파티클": SetConsumeParticle(); break;
+            case "포션": SetConsumePotionEffect(); break;
+            case "해독": SetConsumePotionRemoveEffect(); break;
+            case "소리효과": SetConsumeSoundEffect(); break;
+            case "이동거리": SetConsumeTelepotationEffectDistance(); break;
+            default: sendMessage("messages.do.consume.usage"); break;
+        }
+    }
+    private void SetConsumePotionEffect(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        switch (args[2]){
+            case "추가": AddConsumePotionEffect(); break;
+            case "제거": RemoveConsumePotionEffect(); break;
+            default: sendMessage("messages.do.consume.usage"); break;
+        }
+    }
+    private void SetConsumePotionRemoveEffect(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        switch (args[2]){
+            case "추가": AddConsumePotionRemoveEffect(); break;
+            case "제거": RemoveConsumePotionRemoveEffect(); break;
+            default: sendMessage("messages.do.consume.usage"); break;
         }
     }
     public void SetItemName(){
@@ -550,9 +597,8 @@ public class ItemSettingCommandManager {
             damageable.setDamage(amount);
             handItem.setItemMeta(damageable);
         }
-
     }
-    private void SetPotion(){
+    private void AddPotion(){
         if (CheckArgsLength(4, "messages.do.potion.usage")) return;
         if (IsHandItemAir()) return;
         if (meta instanceof PotionMeta potionMeta){
@@ -564,8 +610,168 @@ public class ItemSettingCommandManager {
             if (dur == null) return;
             PotionEffect effect = new PotionEffect(type, dur, amp);
             potionMeta.addCustomEffect(effect, true);
-
+            handItem.setItemMeta(meta);
         }
+    }
+    private void RemovePotion(){
+        if (CheckArgsLength(3, "messages.do.potion.usage")) return;
+        if (IsHandItemAir()) return;
+        if (meta instanceof PotionMeta potionMeta){
+            if (!EffectType.HasCode(args[2])) return;
+            PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[2]));
+            potionMeta.removeCustomEffect(type);
+            handItem.setItemMeta(meta);
+        }
+    }
+    private void SetConsumable(){
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)){
+            Consumable.Builder builder = Consumable.consumable();
+            handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+            sender.sendMessage("아이템 사용 가능하도록 설정");
+        }
+        else{
+            handItem.unsetData(DataComponentTypes.CONSUMABLE);
+            sender.sendMessage("아이템 사용 할 수 없게 설정");
+        }
+
+    }
+    private void SetConsumeSeconds(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable.Builder builder = handItem.getData(DataComponentTypes.CONSUMABLE).toBuilder();
+        float second;
+        try {
+            second = Float.parseFloat(args[2]);
+            if (second < 0) return;
+        } catch (Exception e){ return;}
+        builder.consumeSeconds(second);
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+    }
+    private void SetConsumeSound(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable.Builder builder = handItem.getData(DataComponentTypes.CONSUMABLE).toBuilder();
+        builder.sound(NamespacedKey.minecraft(args[2]));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+
+    }
+    private void SetConsumeAnim(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable.Builder builder = handItem.getData(DataComponentTypes.CONSUMABLE).toBuilder();
+        ItemUseAnimation animation = UseAnimationType.GetAnimation(args[2]);
+        if (animation == null){
+            sender.sendMessage("정확한 애니메이션 이름을 입력하세요");
+            return;
+        }
+        builder.animation(animation);
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+
+
+    }
+    private void SetConsumeParticle(){
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+
+        builder.hasConsumeParticles(!consumable.hasConsumeParticles());
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+
+
+    }
+    private void SetConsumeSoundEffect(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.PlaySound ce){
+                effects.remove(ce);
+                builder.effects(effects);
+                break;
+            }
+        }
+        builder.addEffect(ConsumeEffect.playSoundConsumeEffect(NamespacedKey.minecraft(args[2])));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+    }
+    private void SetConsumeTelepotationEffectDistance(){
+        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+        List<ConsumeEffect> effects = new ArrayList<>(consumable.consumeEffects());
+        float second;
+        try {
+            second = Float.parseFloat(args[2]);
+            if (second < 0) return;
+        } catch (Exception e){ return;}
+        for (ConsumeEffect e : effects){
+            if (e instanceof ConsumeEffect.TeleportRandomly ce){
+                effects.remove(ce);
+                builder.effects(effects);
+                break;
+            }
+        }
+        builder.addEffect(ConsumeEffect.teleportRandomlyEffect(second));
+        handItem.setData(DataComponentTypes.CONSUMABLE, builder);
+
+    }
+    private void AddConsumePotionEffect(){
+        if (CheckArgsLength(6, "messages.do.consume.usage")) return;
+        if (IsHandItemAir()) return;
+        if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
+            sendMessage("messages.do.consume.not_valid");
+            return;
+        }
+        Consumable consumable = handItem.getData(DataComponentTypes.CONSUMABLE);
+        Consumable.Builder builder = consumable.toBuilder();
+
+        if (!EffectType.HasCode(args[1])) return;
+        PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[1]));
+        Integer amp = parseInt(args[2], 0, 32767);
+        if (amp == null) return;
+        Integer dur = parseInt(args[3], 0, Integer.MAX_VALUE);
+        if (dur == null) return;
+        PotionEffect effect = new PotionEffect(type, dur, amp);
+
+    }
+    private void RemoveConsumePotionEffect(){
+
+    }
+    private void SetConsumePotionEffectChance(){
+
+    }
+    private void AddConsumePotionRemoveEffect(){
+
+    }
+    private void RemoveConsumePotionRemoveEffect(){
+
     }
 
 
