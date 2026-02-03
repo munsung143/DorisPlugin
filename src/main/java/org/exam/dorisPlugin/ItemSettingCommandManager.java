@@ -131,6 +131,7 @@ public class ItemSettingCommandManager {
             case "색상": SetItemColor(); break;
             case "스택": SetMaxStack(); break;
             case "착용버프": SetPotionPassive(); break;
+            case "공격버프": SetPotionAttack(); break;
             case "착용": SetEquip();break;
             case "모델": SetModel(); break;
             case "내구도": SetDurability(); break;
@@ -169,6 +170,17 @@ public class ItemSettingCommandManager {
             case "제거": SetPotionPassiveRemove(); break;
             case "확인": SetPotionPassiveCheck(); break;
             default: sendMessage("messages.do.potion_passive_usage"); break;
+        }
+    }
+    public void SetPotionAttack(){
+        if (CheckArgsLength(2, "messages.do.potion_attack.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
+        }
+        switch (args[1]){
+            case "추가": SetPotionAttackAdd(); break;
+            case "제거": SetPotionAttackRemove(); break;
+            case "확인": SetPotionAttackCheck(); break;
+            default: sendMessage("messages.do.potion_attack_usage"); break;
         }
     }
     private void SetEquip(){
@@ -532,8 +544,6 @@ public class ItemSettingCommandManager {
             container.set(namespacedKey, PersistentDataType.LIST.integerArrays(), list);
         }
         handItem.setItemMeta(meta);
-
-
     }
     public void SetPotionPassiveCheck(){
         if (IsHandItemAir()) return;
@@ -559,7 +569,103 @@ public class ItemSettingCommandManager {
                 sb.setLength(0);
             }
         }
+    }
+    public void SetPotionAttackAdd(){
+        if (CheckArgsLength(7, "messages.do.potion_attack.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
+        }
+        if (IsHandItemAir()) return;
+        String key = "";
+        int effectCode = 0;
+        switch (args[2]){
+            case "갑옷": key = "potion_attack_armor"; break;
+            case "오른손": key = "potion_attack_mainhand"; break;
+            case "왼손": key = "potion_attack_offhand"; break;
+            default: sender.sendMessage("§c잘못된 부위가 입력됨"); return;
+        }
+        NamespacedKey namespacedKey = NamespacedKey.fromString(key, Main.plugin);
+        if (namespacedKey == null){
+            sender.sendMessage("undefined error");
+            return;
+        }
+        if (!EffectType.HasCode(args[3])){
+            sender.sendMessage("§c잘못된 포션 효과가 입력됨");
+            return;
+        }
+        effectCode = EffectType.GetCode(args[3]);
+        Integer level = parseInt(args[4], 0, 32767);
+        if (level == null) return;
+        Integer duration = parseInt(args[5], 0, Integer.MAX_VALUE);
+        if (duration == null) return;
+        Integer chance = parseInt(args[6], 0, 1000);
+        if (chance == null) return;
 
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        List<int[]> list = container.get(namespacedKey, PersistentDataType.LIST.integerArrays());
+        if (list == null){
+            list = new ArrayList<>();
+        } else{
+            list = new ArrayList<>(list);
+        }
+        int[] pair = (new int[]{effectCode, level, duration, chance});
+        int i = 0;
+        for (i = 0; i < list.size(); i++){
+            if (list.get(i)[0] == effectCode){
+                list.get(i)[1] = level;
+                list.get(i)[2] = duration;
+                list.get(i)[3] = chance;
+                break;
+            }
+        }
+        if (i == list.size()){
+            list.add(pair);
+        }
+        container.set(namespacedKey, PersistentDataType.LIST.integerArrays(), list);
+        handItem.setItemMeta(meta);
+    }
+    public void SetPotionAttackRemove(){
+        if (CheckArgsLength(4, "messages.do.potion_attack.usage")) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
+        }
+        if (IsHandItemAir()) return;
+        String key = "";
+        int effectCode = 0;
+        switch (args[2]){
+            case "갑옷": key = "potion_attack_armor"; break;
+            case "오른손": key = "potion_attack_mainhand"; break;
+            case "왼손": key = "potion_attack_offhand"; break;
+            default: sender.sendMessage("§c잘못된 부위가 입력됨"); return;
+        }
+        NamespacedKey namespacedKey = NamespacedKey.fromString(key, Main.plugin);
+        if (namespacedKey == null){
+            sender.sendMessage("undefined error");
+            return;
+        }
+        if (!EffectType.HasCode(args[3])){
+            sender.sendMessage("§c잘못된 포션 효과가 입력됨");
+            return;
+        }
+        effectCode = EffectType.GetCode(args[3]);
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        List<int[]> list = container.get(namespacedKey, PersistentDataType.LIST.integerArrays());
+        if (list == null){
+            sender.sendMessage("§c해당 효과는 이미 존재하지 않음");
+            return;
+        }
+        int i = 0;
+        for (i = 0; i < list.size(); i++){
+            if (list.get(i)[0] == effectCode){
+                list.remove(i);
+                break;
+            }
+        }
+        if (list.isEmpty()){
+            container.remove(namespacedKey);
+        }
+        else{
+            container.set(namespacedKey, PersistentDataType.LIST.integerArrays(), list);
+        }
+        handItem.setItemMeta(meta);
     }
     private void SetEquipSlot(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
@@ -574,6 +680,35 @@ public class ItemSettingCommandManager {
         meta.setEquippable(ec);
         handItem.setItemMeta(meta);
 
+    }
+    public void SetPotionAttackCheck(){
+        if (IsHandItemAir()) return;
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        SendAttackCheck("§b착용 효과:", "potion_attack_armor", container);
+        SendAttackCheck("§b오른손 효과:", "potion_attack_mainhand", container);
+        SendAttackCheck("§b왼손 효과:", "potion_attack_offhand", container);
+    }
+    private void SendAttackCheck(String title, String keyName, PersistentDataContainer container){
+        NamespacedKey key = NamespacedKey.fromString(keyName, Main.plugin);
+        List<int[]> list = container.get(key, PersistentDataType.LIST.integerArrays());
+        sender.sendMessage(title);
+        if (list == null){
+            sender.sendMessage("없음");
+        }
+        else{
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < list.size(); i++){
+                sb.append(EffectType.GetName(list.get(i)[0]));
+                sb.append(" 레벨: ");
+                sb.append(list.get(i)[1]);
+                sb.append(" 지속시간: ");
+                sb.append(list.get(i)[2]);
+                sb.append(" 확률: ");
+                sb.append(list.get(i)[3]);
+                sender.sendMessage(sb.toString());
+                sb.setLength(0);
+            }
+        }
     }
     private void SetEquipSound(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
@@ -966,7 +1101,7 @@ public class ItemSettingCommandManager {
         if (CheckArgsLength(3, "messages.do.cooldown.usage")) return;
         if (IsHandItemAir()) return;
         UseCooldownComponent cool = meta.getUseCooldown();
-        Float value = parstFloat(args[3], 0, Float.MAX_VALUE);
+        Float value = parstFloat(args[2], 0, Float.MAX_VALUE);
         if (value == null) return;
         cool.setCooldownSeconds(value);
         meta.setUseCooldown(cool);

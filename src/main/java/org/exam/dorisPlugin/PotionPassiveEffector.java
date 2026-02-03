@@ -19,7 +19,7 @@ public class PotionPassiveEffector implements Listener {
     @EventHandler
     public void OnEquipChange(EntityEquipmentChangedEvent event){
         if (event.getEntity() instanceof Player player){
-            playerBuffs.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>());
+            //playerBuffs.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>());
             var changes = event.getEquipmentChanges();
             RemoveEffect(changes.get(EquipmentSlot.HEAD),"potion_passive_armor", player);
             RemoveEffect(changes.get(EquipmentSlot.CHEST),"potion_passive_armor", player);
@@ -39,7 +39,7 @@ public class PotionPassiveEffector implements Listener {
     private void RemoveEffect(EntityEquipmentChangedEvent.EquipmentChange c, String keyStr, Player player){
         if (c == null) return;
         NamespacedKey key = NamespacedKey.fromString(keyStr, Main.plugin);
-        List<int[]> buffList = playerBuffs.get(player.getUniqueId());
+        //List<int[]> buffList = playerBuffs.get(player.getUniqueId());
         ItemMeta oldMeta = c.oldItem().getItemMeta();
         if (oldMeta == null) return;
         List<int[]> list = oldMeta.getPersistentDataContainer().get(key, PersistentDataType.LIST.integerArrays());

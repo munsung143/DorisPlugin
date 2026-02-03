@@ -28,6 +28,7 @@ public final class Main extends JavaPlugin {
         Server server = getServer();
         PluginManager manager = server.getPluginManager();
         manager.registerEvents(new PotionPassiveEffector(), this);
+        manager.registerEvents(new PotionAttackEffector(), this);
 
         InputStream stream = getResource("messages.yml");
         if (stream == null) {
@@ -44,6 +45,7 @@ public final class Main extends JavaPlugin {
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (cmd.getName().equalsIgnoreCase("도")) {
+            if (!sender.isOp()) return false;
             ItemSettingCommandManager manager = new ItemSettingCommandManager(sender, args, message);
             manager.Start();
             return true;
