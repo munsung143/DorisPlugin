@@ -29,6 +29,7 @@ public final class Main extends JavaPlugin {
         PluginManager manager = server.getPluginManager();
         manager.registerEvents(new PotionPassiveEffector(), this);
         manager.registerEvents(new PotionAttackEffector(), this);
+        manager.registerEvents(new RandomTeleport(), this);
 
         InputStream stream = getResource("messages.yml");
         if (stream == null) {
