@@ -39,6 +39,7 @@ public class RandomTeleport implements Listener {
     @EventHandler
     public void OnSwap(PlayerSwapHandItemsEvent event){
         Player player = event.getPlayer();
+        if (!player.getWorld().getName().equals("spawn")) return;
         Boolean b = playerSneakState.get(player.getUniqueId());
         if (b != null && b){
             Inventory menu =  Bukkit.createInventory(new MenuInventoryHolder(), 27, title);

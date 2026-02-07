@@ -140,6 +140,7 @@ public class ItemSettingCommandManager {
             case "소비": SetConsume(); break;
             case "쿨타임": SetCooldown(); break;
             case "잔여물": SetRemainder(); break;
+            case "방지" : SetPrevent(); break;
             default: sendMessage("messages.do.usage"); break;
         }
     }
@@ -1119,6 +1120,58 @@ public class ItemSettingCommandManager {
         if (IsHandItemAir()) return;
         ItemStack offItem = inventory.getItemInOffHand();
         meta.setUseRemainder(offItem);
+        handItem.setItemMeta(meta);
+    }
+    private void SetPrevent(){
+        if (CheckArgsLength(2, "messages.do.prevent.usage")) return;
+        if (IsHandItemAir()) return;
+        NamespacedKey namespacedKey = NamespacedKey.fromString(FunctionalBlockPreventer.keyString, Main.plugin);
+        if (namespacedKey == null){
+            sender.sendMessage("undefined error");
+            return;
+        }
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        Integer mask = container.get(namespacedKey, PersistentDataType.INTEGER);
+        if (mask == null) mask = 0;
+        int shift = 0;
+        boolean all = false;
+        switch (args[1]){
+            case "작업대": break;
+            case "화로": shift = 1; break;
+            case "인첸트": shift = 2; break;
+            case "모루": shift = 3; break;
+            case "숫돌": shift = 4; break;
+            case "석재절단기": shift = 5; break;
+            case "훈연기": shift = 6; break;
+            case "용광로": shift = 7; break;
+            case "대장장이": shift = 8; break;
+            case "베틀": shift = 9; break;
+            case "제작기": shift = 10; break;
+            case "플레이어": shift = 11; break;
+            case "전부": all = true; break;
+            default: sendMessage("messages.do.prevent.usage"); break;
+        }
+        if (all){
+            int v = 0b111111111111;
+            if ((mask & v) == v){
+                sender.sendMessage("§b모든 기능블록 사용 가능하게 설정됨");
+                mask = 0;
+            }
+            else{
+                mask = v;
+                sender.sendMessage("§b모든 기능 블록 사용 불가로 설정됨");
+            }
+        }
+        else{
+            mask = mask ^ 1 << shift;
+            if ((mask & 1 << shift) != 0){
+                sender.sendMessage("§b해당 기능 블록 사용 불가로 설정됨");
+            }
+            else {
+                sender.sendMessage("§b해당 기능 블록 사용 가능하게 설정됨");
+            }
+        }
+        container.set(namespacedKey, PersistentDataType.INTEGER, mask);
         handItem.setItemMeta(meta);
     }
 

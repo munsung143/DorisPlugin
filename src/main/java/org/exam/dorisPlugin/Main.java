@@ -30,6 +30,7 @@ public final class Main extends JavaPlugin {
         manager.registerEvents(new PotionPassiveEffector(), this);
         manager.registerEvents(new PotionAttackEffector(), this);
         manager.registerEvents(new RandomTeleport(), this);
+        manager.registerEvents(new FunctionalBlockPreventer(), this);
 
         InputStream stream = getResource("messages.yml");
         if (stream == null) {
