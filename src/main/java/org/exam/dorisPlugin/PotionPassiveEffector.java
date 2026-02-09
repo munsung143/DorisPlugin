@@ -5,6 +5,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -35,6 +36,17 @@ public class PotionPassiveEffector implements Listener {
             ApplyEffect(EquipmentSlot.OFF_HAND, "potion_passive_offhand", player);
 
         }
+    }
+    @EventHandler
+    public void OnRespawn(PlayerRespawnEvent event){
+        Player player = event.getPlayer();
+        ApplyEffect(EquipmentSlot.HEAD, "potion_passive_armor", player);
+        ApplyEffect(EquipmentSlot.CHEST, "potion_passive_armor", player);
+        ApplyEffect(EquipmentSlot.LEGS, "potion_passive_armor", player);
+        ApplyEffect(EquipmentSlot.FEET, "potion_passive_armor", player);
+        ApplyEffect(EquipmentSlot.HAND, "potion_passive_mainhand", player);
+        ApplyEffect(EquipmentSlot.OFF_HAND, "potion_passive_offhand", player);
+
     }
     private void RemoveEffect(EntityEquipmentChangedEvent.EquipmentChange c, String keyStr, Player player){
         if (c == null) return;

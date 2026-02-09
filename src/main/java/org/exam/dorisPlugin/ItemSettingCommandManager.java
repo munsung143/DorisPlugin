@@ -80,16 +80,6 @@ public class ItemSettingCommandManager {
         }
         return false;
     }
-    public String CombineRestArgstoString(int startAt){
-        StringBuilder inputBuilder = new StringBuilder();
-        for(int i = startAt; i < args.length; i++){
-            inputBuilder.append(args[i]);
-            if(i < args.length - 1){
-                inputBuilder.append(' ');
-            }
-        }
-        return inputBuilder.toString();
-    }
     private boolean CheckArgsLength(int length, String message){
         if (args.length < length){
             sendMessage(message);
@@ -263,7 +253,7 @@ public class ItemSettingCommandManager {
     public void SetItemName(){
         if (CheckArgsLength(2, "messages.do.name.usage")) return;
         if (IsHandItemAir()) return;
-        TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(1));
+        TextFormatBuilder builder = new TextFormatBuilder(PluginUtil.CombineRestArgstoString(args, 1));
         Component cmp = builder.Build();
         meta.customName(cmp);
         handItem.setItemMeta(meta);
@@ -273,7 +263,7 @@ public class ItemSettingCommandManager {
     public void AddLore(){
         if (CheckArgsLength(3, "messages.do.lore.usage")) return;
         if (IsHandItemAir()) return;
-        TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(2));
+        TextFormatBuilder builder = new TextFormatBuilder(PluginUtil.CombineRestArgstoString(args, 2));
         Component cmp = builder.Build();
         List<Component> existLores = meta.lore();
         if (existLores == null){
@@ -314,7 +304,7 @@ public class ItemSettingCommandManager {
         }
         Integer index = parseInt(args[2], 0, existLores.size() - 1);
         if (index == null) return;
-        TextFormatBuilder builder = new TextFormatBuilder(CombineRestArgstoString(3));
+        TextFormatBuilder builder = new TextFormatBuilder(PluginUtil.CombineRestArgstoString(args, 3));
         Component cmp = builder.Build();
         existLores.add(index, cmp);
         if (args[1].equalsIgnoreCase("변경")){

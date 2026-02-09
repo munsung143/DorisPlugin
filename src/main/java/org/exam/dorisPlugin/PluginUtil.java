@@ -51,4 +51,38 @@ public class PluginUtil {
         }
         return val;
     }
+
+    public static String CombineRestArgstoString(String[] args, int startAt){
+        StringBuilder inputBuilder = new StringBuilder();
+        for(int i = startAt; i < args.length; i++){
+            inputBuilder.append(args[i]);
+            if(i < args.length - 1){
+                inputBuilder.append(' ');
+            }
+        }
+        return inputBuilder.toString();
+    }
+    public static Integer parseInt(String arg, int min, int max) {
+        try {
+            int value = Integer.parseInt(arg);
+            return value >= min && value <= max ? value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    public static Float parseFloat(String arg, float min, float max){
+        try {
+            float value = Float.parseFloat(arg);
+            return value >= min && value <= max ? value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    public static Boolean parseBool(String arg){
+        try {
+            return Boolean.parseBoolean(arg);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
