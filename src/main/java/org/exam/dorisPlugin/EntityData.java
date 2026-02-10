@@ -14,9 +14,10 @@ public class EntityData {
         public String operation;
         public Double amount;
     }
+
     public EntityType type;
     public String custom_name;
-    public boolean custom_name_visible;
+    public Boolean custom_name_visible;
     public short Fire;
     public boolean Glowing;
     public boolean HasVisualFire;

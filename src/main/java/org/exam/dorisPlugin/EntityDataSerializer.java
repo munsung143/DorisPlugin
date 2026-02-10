@@ -22,10 +22,8 @@ public final class EntityDataSerializer {
             if (typeStr != null){
                 data.type = RegiAccess.getRegistry(RegistryKey.ENTITY_TYPE).get(NamespacedKey.minecraft(typeStr));
             }
-            String customNameValue = section.getString("custom_name");
-            if (customNameValue != null){
-                data.custom_name = customNameValue;
-            }
+            data.custom_name = section.getString("custom_name");
+
             data.custom_name_visible = section.getBoolean("custom_name_visible");
 
             UnserializedData.put(key, data);
@@ -43,7 +41,7 @@ public final class EntityDataSerializer {
             if (value.custom_name != null){
                 section.set("custom_name", value.custom_name);
             }
-            if (value.custom_name_visible){
+            if (value.custom_name_visible != null){
                 section.set("custom_name_visible", value.custom_name_visible);
             }
         }

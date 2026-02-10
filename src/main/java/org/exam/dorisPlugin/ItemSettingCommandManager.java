@@ -52,26 +52,19 @@ public class ItemSettingCommandManager {
     private CommandSender sender;
     private ItemStack handItem;
     private RegistryAccess RegiAccess = RegistryAccess.registryAccess();
-    private YamlConfiguration message;
     private ItemMeta meta;
     private PlayerInventory inventory;
 
-    public ItemSettingCommandManager(CommandSender sender, String[] args, YamlConfiguration message){
+    public ItemSettingCommandManager(CommandSender sender, String[] args){
         this.args = args;
         this.sender = sender;
-        this.message = message;
         // Player 인터페이스는 CommandSender 인터페이스를 상속
         // 플레이어가 명령어 호출 시 Player 인터페이스를 구현한 클래스가 sender 매개변수로 올 것.
         // 따라서 아래와 같이 캐스팅 가능.
         Player player = (Player)sender;
         inventory = player.getInventory();
         handItem = inventory.getItemInMainHand();
-    }
-    private void sendMessage(String path){
-        List<String> str = message.getStringList(path);
-        for (String line : str) {
-            sender.sendMessage(line);
-        }
+        meta = handItem.getItemMeta();
     }
     private boolean IsHandItemAir(){
         if (handItem.getType().isAir()){
@@ -87,168 +80,19 @@ public class ItemSettingCommandManager {
         }
         return false;
     }
+    private void sendMessage(String message){
+        Main.sendMessage(message, sender);
+    }
     private Integer parseInt(String arg, int min, int max) {
-        try {
-            int value = Integer.parseInt(arg);
-            return value >= min && value <= max ? value : null;
-        } catch (Exception e) {
-            sender.sendMessage("§c올바른 정수값 입력이 아니거나 범위를 벗어납니다");
-            return null;
-        }
+        return PluginUtil.parseInt(arg, min, max);
     }
     private Float parstFloat(String arg, float min, float max){
-        try {
-            float value = Float.parseFloat(arg);
-            return value >= min && value <= max ? value : null;
-        } catch (Exception e) {
-            sender.sendMessage("§c올바른 실수값 입력이 아니거나 범위를 벗어납니다");
-            return null;
-        }
+        return PluginUtil.parseFloat(arg, min, max);
     }
     private void SendResult(String... args){
         String str = String.join(" ", Arrays.copyOfRange(args, 0, args.length));
         sender.sendMessage(str);
 
-    }
-    public void Start(){
-        meta = handItem.getItemMeta();
-        if (CheckArgsLength(1, "messages.do.usage")) return;
-        switch (args[0]){
-            case "인첸트": SetEnchantment(); break;
-            case "이름": SetItemName(); break;
-            case "설명": SetItemLore(); break;
-            case "속성": SetItemAttribute(); break;
-            case "색상": SetItemColor(); break;
-            case "스택": SetMaxStack(); break;
-            case "착용버프": SetPotionPassive(); break;
-            case "공격버프": SetPotionAttack(); break;
-            case "착용": SetEquip();break;
-            case "모델": SetModel(); break;
-            case "내구도": SetDurability(); break;
-            case "포션": SetPotion(); break;
-            case "음식": SetFood(); break;
-            case "소비": SetConsume(); break;
-            case "쿨타임": SetCooldown(); break;
-            case "잔여물": SetRemainder(); break;
-            case "방지" : SetPrevent(); break;
-            default: sendMessage("messages.do.usage"); break;
-        }
-    }
-    public void SetItemLore(){
-        if (CheckArgsLength(2, "messages.do.lore.usage")) return;
-        switch (args[1]){
-            case "추가": AddLore(); break;
-            case "삭제": DeleteLore(); break;
-            case "삽입", "변경": InsertLore(); break;
-            default: sendMessage("messages.do.lore.usage"); break;
-        }
-    }
-    public void SetItemAttribute(){
-        if (CheckArgsLength(2, "messages.do.attribute.usage")) return;
-        switch (args[1]){
-            case "목록": sendMessage("messages.do.attribute.list"); break;
-            case "기본데미지","기본공격속도": SetBaseAttribute(); break;
-            case "초기화": ClearAttribute(); break;
-            default: SetAttribute(); break;
-        }
-    }
-    public void SetPotionPassive(){
-        if (CheckArgsLength(2, "messages.do.potion_passive.usage")) {
-            sender.sendMessage(Arrays.toString(EffectType.values())); return;
-        }
-        switch (args[1]){
-            case "추가": SetPotionPassiveAdd(); break;
-            case "제거": SetPotionPassiveRemove(); break;
-            case "확인": SetPotionPassiveCheck(); break;
-            default: sendMessage("messages.do.potion_passive_usage"); break;
-        }
-    }
-    public void SetPotionAttack(){
-        if (CheckArgsLength(2, "messages.do.potion_attack.usage")) {
-            sender.sendMessage(Arrays.toString(EffectType.values())); return;
-        }
-        switch (args[1]){
-            case "추가": SetPotionAttackAdd(); break;
-            case "제거": SetPotionAttackRemove(); break;
-            case "확인": SetPotionAttackCheck(); break;
-            default: sendMessage("messages.do.potion_attack_usage"); break;
-        }
-    }
-    private void SetEquip(){
-        if (CheckArgsLength(2, "messages.do.equip.usage")) return;
-        switch (args[1]){
-            case "부위": SetEquipSlot(); break;
-            case "소리": SetEquipSound(); break;
-            case "모델": SetEquipModel(); break;
-            default: sendMessage("messages.do.equip.usage");
-        }
-    }
-    private void SetDurability(){
-        if (CheckArgsLength(2, "messages.do.durability.usage")) return;
-        switch (args[1]){
-            case "무한": SetUnbreakable(); break;
-            case "최대": SetMaxDurability(); break;
-            case "감소": SetCurrentDurability(); break;
-            default: sendMessage("messages.do.durability.usage"); break;
-        }
-    }
-    private void SetPotion(){
-        if (CheckArgsLength(2, "messages.do.potion.usage")) return;
-        switch (args[1]){
-            case "제거": RemovePotion(); break;
-            default: AddPotion(); break;
-        }
-    }
-    private void SetFood(){
-        if (CheckArgsLength(2, "messages.do.food.usage")) return;
-        switch (args[1]){
-            case "회복량": SetFoodNutrition(); break;
-            case "포만도": SetFoodSaturation(); break;
-            case "항상": SetFoodAlways(); break;
-            default: sendMessage("messages.do.food.usage"); break;
-        }
-    }
-    private void SetConsume(){
-        if (CheckArgsLength(2, "messages.do.consume.usage")) return;
-        switch (args[1]){
-            case "설정": SetConsumable(); break;
-            case "시간": SetConsumeSeconds(); break;
-            case "소리": SetConsumeSound(); break;
-            case "애니메이션": SetConsumeAnim(); break;
-            case "파티클": SetConsumeParticle(); break;
-            case "포션": SetConsumePotionEffect(); break;
-            case "포션해제": SetConsumePotionRemoveEffect(); break;
-            case "소리효과": SetConsumeSoundEffect(); break;
-            case "이동거리": SetConsumeTelepotationEffectDistance(); break;
-            case "모든포션해제": SetConsumeClearAllEffect(); break;
-            default: sendMessage("messages.do.consume.usage"); break;
-        }
-    }
-    private void SetCooldown(){
-        if (CheckArgsLength(2, "messages.do.cooldown.usage")) return;
-        switch (args[1]){
-            case "설정": SetCooldownSeconds(); break;
-            case "그룹": SetCooldownGroup(); break;
-            default: sendMessage("messages.do.cooldown.usage"); break;
-        }
-
-    }
-    private void SetConsumePotionEffect(){
-        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
-        switch (args[2]){
-            case "추가": AddConsumePotionEffect(); break;
-            case "제거": RemoveConsumePotionEffect(); break;
-            case "확률": SetConsumePotionEffectChance(); break;
-            default: sendMessage("messages.do.consume.usage"); break;
-        }
-    }
-    private void SetConsumePotionRemoveEffect(){
-        if (CheckArgsLength(3, "messages.do.consume.usage")) return;
-        switch (args[2]){
-            case "추가": AddConsumePotionRemoveEffect(); break;
-            case "제거": RemoveConsumePotionRemoveEffect(); break;
-            default: sendMessage("messages.do.consume.usage"); break;
-        }
     }
     public void SetItemName(){
         if (CheckArgsLength(2, "messages.do.name.usage")) return;
@@ -258,6 +102,11 @@ public class ItemSettingCommandManager {
         meta.customName(cmp);
         handItem.setItemMeta(meta);
         sender.sendMessage("§a아이템의 이름을 변경했습니다.");
+    }
+    public int getLoreSize(){
+        List<Component> existLores = meta.lore();
+        if (existLores == null) return 0;
+        return existLores.size();
     }
 
     public void AddLore(){
@@ -334,13 +183,13 @@ public class ItemSettingCommandManager {
         handItem.addUnsafeEnchantment(enchant, level);
         SendResult("§a인첸트 추가 ", enchant.toString(), " 레벨 ", level.toString());
     }
-    private void SetAttribute(){
-        if (CheckArgsLength(5, "message.do.attribute.usage")) return;
+    public void SetAttribute(){
+        if (CheckArgsLength(6, "message.do.attribute.usage")) return;
         if (IsHandItemAir()) return;
         EquipmentSlotGroup slot;
         AttributeModifier.Operation operation;
         double amount = 0;
-        if (!AttributeType.ContainsKey(args[1])){
+        if (!AttributeType.ContainsKey(args[2])){
             sender.sendMessage("§c잘못된 속성이 입력됨");
             return;
         }
@@ -348,19 +197,19 @@ public class ItemSettingCommandManager {
         if (attribute == null){
             return;
         }
-        slot = SlotType.GetSlotGroup(args[2]);
+        slot = SlotType.GetSlotGroup(args[3]);
         if (slot == null){
             sender.sendMessage("§c잘못된 슬롯명이 입력됨");
             return;
         }
-        switch (args[3]){
+        switch (args[4]){
             case "더하기": operation = AttributeModifier.Operation.ADD_NUMBER; break;
             case "곱하기": operation = AttributeModifier.Operation.ADD_SCALAR; break;
             case "누적곱하기": operation = AttributeModifier.Operation.MULTIPLY_SCALAR_1; break;
             default: sender.sendMessage("§c잘못된 계산 방식이 입력됨"); return;
         }
         try {
-            amount = Double.parseDouble(args[4]);
+            amount = Double.parseDouble(args[5]);
         }
         catch (Exception e){
             return;
@@ -381,7 +230,7 @@ public class ItemSettingCommandManager {
         sender.sendMessage("§a아이템에 속성을 추가했습니다.");
 
     }
-    private void ClearAttribute(){
+    public void ClearAttribute(){
         if (IsHandItemAir()) return;
         meta.setAttributeModifiers(null);
         handItem.setItemMeta(meta);
@@ -658,7 +507,7 @@ public class ItemSettingCommandManager {
         }
         handItem.setItemMeta(meta);
     }
-    private void SetEquipSlot(){
+    public void SetEquipSlot(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
         if (IsHandItemAir()) return;
         EquipmentSlot slot = SlotType.GetSlot(args[2]);
@@ -701,7 +550,7 @@ public class ItemSettingCommandManager {
             }
         }
     }
-    private void SetEquipSound(){
+    public void SetEquipSound(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
         if (IsHandItemAir()) return;
         Sound sound = RegiAccess.getRegistry(RegistryKey.SOUND_EVENT).get(NamespacedKey.minecraft(args[2]));
@@ -715,7 +564,7 @@ public class ItemSettingCommandManager {
         handItem.setItemMeta(meta);
 
     }
-    private void SetEquipModel(){
+    public void SetEquipModel(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
         if (IsHandItemAir()) return;
         EquippableComponent ec = meta.getEquippable();
@@ -723,14 +572,13 @@ public class ItemSettingCommandManager {
         meta.setEquippable(ec);
         handItem.setItemMeta(meta);
     }
-    private void SetModel(){
+    public void SetModel(){
         if(CheckArgsLength(2, "messages.do.model.usage")) return;
         if (IsHandItemAir()) return;
         meta.setItemModel(NamespacedKey.minecraft(args[1]));
-        NamespacedKey key = NamespacedKey.minecraft(args[1]);
         handItem.setItemMeta(meta);
     }
-    private void SetMaxDurability(){
+    public void SetMaxDurability(){
         if (CheckArgsLength(3, "messages.do.stack.usage")) return;
         if (IsHandItemAir()) return;
         Integer amount = parseInt(args[2], 1, Integer.MAX_VALUE);
@@ -740,12 +588,12 @@ public class ItemSettingCommandManager {
             handItem.setItemMeta(damageable);
         }
     }
-    private void SetUnbreakable(){
+    public void SetUnbreakable(){
         if (IsHandItemAir()) return;
         meta.setUnbreakable(!meta.isUnbreakable());
         handItem.setItemMeta(meta);
     }
-    private void SetCurrentDurability(){
+    public void SetCurrentDurability(){
         if (CheckArgsLength(3, "messages.do.stack.usage")) return;
         if (IsHandItemAir()) return;
         Integer amount = parseInt(args[2], 0, Integer.MAX_VALUE);
@@ -755,7 +603,7 @@ public class ItemSettingCommandManager {
             handItem.setItemMeta(damageable);
         }
     }
-    private void AddPotion(){
+    public void AddPotion(){
         if (CheckArgsLength(4, "messages.do.potion.usage")) return;
         if (IsHandItemAir()) return;
         if (meta instanceof PotionMeta potionMeta){
@@ -770,7 +618,7 @@ public class ItemSettingCommandManager {
             handItem.setItemMeta(meta);
         }
     }
-    private void RemovePotion(){
+    public void RemovePotion(){
         if (CheckArgsLength(3, "messages.do.potion.usage")) return;
         if (IsHandItemAir()) return;
         if (meta instanceof PotionMeta potionMeta){
@@ -780,7 +628,7 @@ public class ItemSettingCommandManager {
             handItem.setItemMeta(meta);
         }
     }
-    private void SetConsumable(){
+    public void SetConsumable(){
         if (IsHandItemAir()) return;
         if (!handItem.hasData(DataComponentTypes.CONSUMABLE)){
             Consumable.Builder builder = Consumable.consumable();
@@ -793,7 +641,7 @@ public class ItemSettingCommandManager {
         }
 
     }
-    private Consumable ConsumableSettingPlate(int length){
+    public Consumable ConsumableSettingPlate(int length){
         if (CheckArgsLength(length, "messages.do.consume.usage")) return null;
         if (IsHandItemAir()) return null;
         if (!handItem.hasData(DataComponentTypes.CONSUMABLE)) {
@@ -803,7 +651,7 @@ public class ItemSettingCommandManager {
         return handItem.getData(DataComponentTypes.CONSUMABLE);
 
     }
-    private void SetConsumeSeconds(){
+    public void SetConsumeSeconds(){
         Consumable consumable =  ConsumableSettingPlate(3);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -812,7 +660,7 @@ public class ItemSettingCommandManager {
         builder.consumeSeconds(second);
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
     }
-    private void SetConsumeSound(){
+    public void SetConsumeSound(){
         Consumable consumable =  ConsumableSettingPlate(3);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -820,7 +668,7 @@ public class ItemSettingCommandManager {
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
-    private void SetConsumeAnim(){
+    public void SetConsumeAnim(){
         Consumable consumable =  ConsumableSettingPlate(3);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -834,7 +682,7 @@ public class ItemSettingCommandManager {
 
 
     }
-    private void SetConsumeParticle(){
+    public void SetConsumeParticle(){
         Consumable consumable =  ConsumableSettingPlate(2);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -843,7 +691,7 @@ public class ItemSettingCommandManager {
 
 
     }
-    private void SetConsumeSoundEffect(){
+    public void SetConsumeSoundEffect(){
         Consumable consumable =  ConsumableSettingPlate(3);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -858,7 +706,7 @@ public class ItemSettingCommandManager {
         builder.addEffect(ConsumeEffect.playSoundConsumeEffect(NamespacedKey.minecraft(args[2])));
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
     }
-    private void SetConsumeClearAllEffect(){
+    public void SetConsumeClearAllEffect(){
         Consumable consumable =  ConsumableSettingPlate(2);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -873,7 +721,7 @@ public class ItemSettingCommandManager {
         builder.addEffect(ConsumeEffect.clearAllStatusEffects());
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
     }
-    private void SetConsumeTelepotationEffectDistance(){
+    public void SetConsumeTelepotationEffectDistance(){
         Consumable consumable =  ConsumableSettingPlate(3);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -891,7 +739,7 @@ public class ItemSettingCommandManager {
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
-    private void AddConsumePotionEffect(){
+    public void AddConsumePotionEffect(){
         Consumable consumable =  ConsumableSettingPlate(6);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -933,7 +781,7 @@ public class ItemSettingCommandManager {
         sender.sendMessage("아이템 포션 효과를 수정했습니다.");
 
     }
-    private void RemoveConsumePotionEffect(){
+    public void RemoveConsumePotionEffect(){
         Consumable consumable =  ConsumableSettingPlate(4);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -972,7 +820,7 @@ public class ItemSettingCommandManager {
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
-    private void SetConsumePotionEffectChance(){
+    public void SetConsumePotionEffectChance(){
         Consumable consumable =  ConsumableSettingPlate(4);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -999,7 +847,7 @@ public class ItemSettingCommandManager {
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
-    private void AddConsumePotionRemoveEffect(){
+    public void AddConsumePotionRemoveEffect(){
         Consumable consumable =  ConsumableSettingPlate(4);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -1035,7 +883,7 @@ public class ItemSettingCommandManager {
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
 
     }
-    private void RemoveConsumePotionRemoveEffect(){
+    public void RemoveConsumePotionRemoveEffect(){
         Consumable consumable =  ConsumableSettingPlate(4);
         if (consumable == null) return;
         Consumable.Builder builder = consumable.toBuilder();
@@ -1060,7 +908,7 @@ public class ItemSettingCommandManager {
         builder.addEffect(ConsumeEffect.removeEffects(potionEffectsKeySet));
         handItem.setData(DataComponentTypes.CONSUMABLE, builder);
     }
-    private void SetFoodNutrition(){
+    public void SetFoodNutrition(){
         if (CheckArgsLength(3, "messages.do.food.usage")) return;
         if (IsHandItemAir()) return;
         FoodComponent food = meta.getFood();
@@ -1070,7 +918,7 @@ public class ItemSettingCommandManager {
         meta.setFood(food);
         handItem.setItemMeta(meta);
     }
-    private void SetFoodSaturation(){
+    public void SetFoodSaturation(){
         if (CheckArgsLength(3, "messages.do.food.usage")) return;
         if (IsHandItemAir()) return;
         FoodComponent food = meta.getFood();
@@ -1081,14 +929,14 @@ public class ItemSettingCommandManager {
         handItem.setItemMeta(meta);
 
     }
-    private void SetFoodAlways(){
+    public void SetFoodAlways(){
         if (IsHandItemAir()) return;
         FoodComponent food = meta.getFood();
         food.setCanAlwaysEat(!food.canAlwaysEat());
         meta.setFood(food);
         handItem.setItemMeta(meta);
     }
-    private void SetCooldownSeconds(){
+    public void SetCooldownSeconds(){
         if (CheckArgsLength(3, "messages.do.cooldown.usage")) return;
         if (IsHandItemAir()) return;
         UseCooldownComponent cool = meta.getUseCooldown();
@@ -1098,7 +946,7 @@ public class ItemSettingCommandManager {
         meta.setUseCooldown(cool);
         handItem.setItemMeta(meta);
     }
-    private void SetCooldownGroup(){
+    public void SetCooldownGroup(){
         if (CheckArgsLength(3, "messages.do.cooldown.usage")) return;
         if (IsHandItemAir()) return;
         UseCooldownComponent cool = meta.getUseCooldown();
@@ -1106,13 +954,13 @@ public class ItemSettingCommandManager {
         meta.setUseCooldown(cool);
         handItem.setItemMeta(meta);
     }
-    private void SetRemainder(){
+    public void SetRemainder(){
         if (IsHandItemAir()) return;
         ItemStack offItem = inventory.getItemInOffHand();
         meta.setUseRemainder(offItem);
         handItem.setItemMeta(meta);
     }
-    private void SetPrevent(){
+    public void SetPrevent(){
         if (CheckArgsLength(2, "messages.do.prevent.usage")) return;
         if (IsHandItemAir()) return;
         NamespacedKey namespacedKey = NamespacedKey.fromString(FunctionalBlockPreventer.keyString, Main.plugin);
@@ -1139,7 +987,7 @@ public class ItemSettingCommandManager {
             case "제작기": shift = 10; break;
             case "플레이어": shift = 11; break;
             case "전부": all = true; break;
-            default: sendMessage("messages.do.prevent.usage"); break;
+            default: Main.sendMessage("messages.do.prevent.usage", sender); break;
         }
         if (all){
             int v = 0b111111111111;
@@ -1164,6 +1012,4 @@ public class ItemSettingCommandManager {
         container.set(namespacedKey, PersistentDataType.INTEGER, mask);
         handItem.setItemMeta(meta);
     }
-
-
 }

@@ -13,17 +13,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 
 
 public final class Main extends JavaPlugin {
     public static Plugin plugin;
-
+    private static YamlConfiguration messageYaml;
     private File entityDataYmlFile;
     private YamlConfiguration entityDataYaml;
     private Map<String, EntityData> entityDataMap;
-
-    private YamlConfiguration messageYaml;
 
 
     @Override
@@ -45,7 +44,10 @@ public final class Main extends JavaPlugin {
         }
         messageYaml = YamlConfiguration.loadConfiguration(new InputStreamReader(stream));
         createDataFile();
+        getCommand("도").setExecutor(new ItemSettingCommandTabCompleter());
+        getCommand("도").setTabCompleter(new ItemSettingCommandTabCompleter());
     }
+
     private void createDataFile() {
         // plugins/MyPlugin/
         if (!getDataFolder().exists()) {
@@ -61,6 +63,7 @@ public final class Main extends JavaPlugin {
         }
         entityDataYaml = YamlConfiguration.loadConfiguration(entityDataYmlFile);
         entityDataMap = EntityDataSerializer.Deserialize(entityDataYaml);
+
     }
 
     @Override
@@ -68,15 +71,16 @@ public final class Main extends JavaPlugin {
         // Plugin shutdown logic
         System.out.println("Test plugin unloaded");
     }
+    public static void sendMessage(String path, CommandSender sender){
+        List<String> str = messageYaml.getStringList(path);
+        for (String line : str) {
+            sender.sendMessage(line);
+        }
+    }
+
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("도")) {
-            if (!sender.isOp()) return false;
-            ItemSettingCommandManager manager = new ItemSettingCommandManager(sender, args, messageYaml);
-            manager.Start();
-            return true;
-        }
-        else if (cmd.getName().equalsIgnoreCase("bos")) {
+        if (cmd.getName().equalsIgnoreCase("bos")) {
             if (!sender.isOp()) return false;
             EntitySettingCommandManager manager = new EntitySettingCommandManager(sender, args, entityDataMap, entityDataYmlFile);
             manager.Start();

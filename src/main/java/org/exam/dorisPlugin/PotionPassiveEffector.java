@@ -1,4 +1,5 @@
 package org.exam.dorisPlugin;
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -38,7 +39,7 @@ public class PotionPassiveEffector implements Listener {
         }
     }
     @EventHandler
-    public void OnRespawn(PlayerRespawnEvent event){
+    public void OnRespawn(PlayerPostRespawnEvent event){
         Player player = event.getPlayer();
         ApplyEffect(EquipmentSlot.HEAD, "potion_passive_armor", player);
         ApplyEffect(EquipmentSlot.CHEST, "potion_passive_armor", player);
@@ -74,6 +75,7 @@ public class PotionPassiveEffector implements Listener {
             PotionEffect curEffect = player.getPotionEffect(type);
             if (curEffect == null || curEffect.getAmplifier() < amp){
                 player.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, amp));
+
             }
 
         }
