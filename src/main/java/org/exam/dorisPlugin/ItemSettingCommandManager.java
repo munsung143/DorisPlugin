@@ -1,7 +1,5 @@
 package org.exam.dorisPlugin;
 
-import io.papermc.paper.datacomponent.DataComponentBuilder;
-import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
@@ -12,18 +10,13 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.data.type.Switch;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
@@ -36,14 +29,12 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.inventory.meta.components.UseCooldownComponent;
-import org.bukkit.persistence.ListPersistentDataTypeProvider;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.enums.*;
 
-import javax.swing.border.EmptyBorder;
 import java.util.*;
 
 public class ItemSettingCommandManager {
@@ -135,8 +126,8 @@ public class ItemSettingCommandManager {
         if (args.length >= 3){
             index = parseInt(args[2], 0, existLores.size() - 1);
             if (index == null) return;
-            existLores.remove(index.intValue());
         }
+        existLores.remove(index.intValue());
         meta.lore(existLores);
         handItem.setItemMeta(meta);
         sender.sendMessage("§a아이템의 설명을 제거했습니다.");
@@ -184,7 +175,7 @@ public class ItemSettingCommandManager {
         SendResult("§a인첸트 추가 ", enchant.toString(), " 레벨 ", level.toString());
     }
     public void SetAttribute(){
-        if (CheckArgsLength(6, "message.do.attribute.usage")) return;
+        if (CheckArgsLength(6, "messages.do.attribute.usage")) return;
         if (IsHandItemAir()) return;
         EquipmentSlotGroup slot;
         AttributeModifier.Operation operation;
@@ -193,7 +184,7 @@ public class ItemSettingCommandManager {
             sender.sendMessage("§c잘못된 속성이 입력됨");
             return;
         }
-        Attribute attribute = RegiAccess.getRegistry(RegistryKey.ATTRIBUTE).get(NamespacedKey.minecraft(AttributeType.GetValue(args[1])));
+        Attribute attribute = RegiAccess.getRegistry(RegistryKey.ATTRIBUTE).get(NamespacedKey.minecraft(AttributeType.GetValue(args[2])));
         if (attribute == null){
             return;
         }
@@ -604,14 +595,14 @@ public class ItemSettingCommandManager {
         }
     }
     public void AddPotion(){
-        if (CheckArgsLength(4, "messages.do.potion.usage")) return;
+        if (CheckArgsLength(5, "messages.do.potion.usage")) return;
         if (IsHandItemAir()) return;
         if (meta instanceof PotionMeta potionMeta){
-            if (!EffectType.HasCode(args[1])) return;
-            PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[1]));
-            Integer amp = parseInt(args[2], 0, 32767);
+            if (!EffectType.HasCode(args[2])) return;
+            PotionEffectType type =  EffectType.GetType(EffectType.GetCode(args[2]));
+            Integer amp = parseInt(args[3], 0, 32767);
             if (amp == null) return;
-            Integer dur = parseInt(args[3], 0, Integer.MAX_VALUE);
+            Integer dur = parseInt(args[4], 0, Integer.MAX_VALUE);
             if (dur == null) return;
             PotionEffect effect = new PotionEffect(type, dur, amp);
             potionMeta.addCustomEffect(effect, true);
@@ -971,38 +962,24 @@ public class ItemSettingCommandManager {
         PersistentDataContainer container = meta.getPersistentDataContainer();
         Integer mask = container.get(namespacedKey, PersistentDataType.INTEGER);
         if (mask == null) mask = 0;
-        int shift = 0;
-        boolean all = false;
-        switch (args[1]){
-            case "작업대": break;
-            case "화로": shift = 1; break;
-            case "인첸트": shift = 2; break;
-            case "모루": shift = 3; break;
-            case "숫돌": shift = 4; break;
-            case "석재절단기": shift = 5; break;
-            case "훈연기": shift = 6; break;
-            case "용광로": shift = 7; break;
-            case "대장장이": shift = 8; break;
-            case "베틀": shift = 9; break;
-            case "제작기": shift = 10; break;
-            case "플레이어": shift = 11; break;
-            case "전부": all = true; break;
-            default: Main.sendMessage("messages.do.prevent.usage", sender); break;
+        Integer shift = FunctionalBlockType.name2Mask(args[1]);
+        if (shift == null){
+            sender.sendMessage("§c정확한 기능블록 입력");
+            return;
         }
-        if (all){
-            int v = 0b111111111111;
-            if ((mask & v) == v){
+        if (shift == -1){
+            if ((mask & shift) == shift){
                 sender.sendMessage("§b모든 기능블록 사용 가능하게 설정됨");
                 mask = 0;
             }
             else{
-                mask = v;
+                mask = shift;
                 sender.sendMessage("§b모든 기능 블록 사용 불가로 설정됨");
             }
         }
         else{
-            mask = mask ^ 1 << shift;
-            if ((mask & 1 << shift) != 0){
+            mask = mask ^ shift;
+            if ((mask & shift) != 0){
                 sender.sendMessage("§b해당 기능 블록 사용 불가로 설정됨");
             }
             else {

@@ -1,4 +1,4 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.enums;
 
 import org.bukkit.potion.PotionEffectType;
 

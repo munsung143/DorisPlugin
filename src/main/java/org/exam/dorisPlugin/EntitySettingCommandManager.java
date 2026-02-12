@@ -26,36 +26,43 @@ public class EntitySettingCommandManager {
     private Player sender;
     private RegistryAccess RegiAccess = RegistryAccess.registryAccess();
     private Map<String , EntityData> entityDataMap;
-    private File file;
 
-    public EntitySettingCommandManager(CommandSender sender, String[] args, Map<String, EntityData> entityData, File file){
+    public EntitySettingCommandManager(CommandSender sender, Map<String, EntityData> entityData, String[] args){
         this.args = args;
         this.entityDataMap = entityData;
         this.sender = (Player)sender;
-        this.file = file;
+    }
+    private String returnKey(String arg){
+        if (entityDataMap.containsKey(arg)){
+            return arg;
+        }
+        else {
+            sendMessage("해당 몬스터 존재하지 않음");
+            return null;
+        }
+    }
+    private void sendMessage(String message){
+        sender.sendMessage(message);
+    }
+    private boolean checkArgsLength(int len){
+        if (args.length < len){
+            sendMessage("명령어에 필요한 인자가 부족함");
+            return false;
+        }
+        return true;
+    }
+    private EntityData getEntityData(String key){
+        return entityDataMap.get(returnKey(key));
+    }
+    public Boolean parseBool(String str){
+        Boolean b = PluginUtil.parseBool(str);
+        if (b == null) {
+            sendMessage("올바른 true/false 입력이 아님");
+        }
+        return b;
     }
 
-    public void Start(){
-        if (args.length < 1) return;
-        switch (args[0]){
-            case "create": CreateNewEntity(); break;
-            case "delete": DeleteEntity(); break;
-            case "list": ShowEntityList(); break;
-            case "spawn": SpawnEntity(); break;
-            case "tag" : SetEntityTags(); break;
-            case "save": Save(); break;
-            default: break;
-        }
-    }
-    private void SetEntityTags(){
-        if (args.length < 2) return;
-        switch (args[1]){
-            case "name": SetEntityCustomName(); break;
-            case "namevisible": SetEntityCustomNameVisible(); break;
-            default: break;
-        }
-    }
-    private void CreateNewEntity(){
+    public void CreateNewEntity(){
         if (args.length < 3) return;
         String key = args[1];
         if (entityDataMap.containsKey(key)){
@@ -72,7 +79,7 @@ public class EntitySettingCommandManager {
         entityDataMap.put(key, data);
         sender.sendMessage("몬스터 추가 됨");
     }
-    private void DeleteEntity(){
+    public void DeleteEntity(int codeIndex){
         if (args.length < 2) return;
         String key = args[1];
         if (!entityDataMap.containsKey(key)){
@@ -82,12 +89,12 @@ public class EntitySettingCommandManager {
         entityDataMap.remove(key);
         sender.sendMessage("몬스터 제거 됨");
     }
-    private void ShowEntityList(){
+    public void ShowEntityList(){
         for (Map.Entry<String, EntityData> e : entityDataMap.entrySet()){
             sender.sendMessage(e.getKey());
         }
     }
-    private void SpawnEntity(){
+    public void SpawnEntity(int codeIndex){
         if (args.length < 2) return;
         String key = args[1];
         if (!entityDataMap.containsKey(key)){
@@ -108,43 +115,34 @@ public class EntitySettingCommandManager {
         }
         entity.setCustomNameVisible(data.custom_name_visible);
     }
-    private void Save(){
+    public void Save(){
         YamlConfiguration config =  EntityDataSerializer.Serialize(entityDataMap);
-        try {
-            config.save(file);
-            sender.sendMessage("저장 완료");
-        } catch (IOException e){
+        if (Main.SaveEntityData(config)){
+            sender.sendMessage("저장 성공");
+        }
+        else{
             sender.sendMessage("저장 실패");
         }
 
     }
-    private void SetEntityCustomName(){
-        if (args.length < 4) return;
-        String key = args[2];
-        if (!entityDataMap.containsKey(key)){
-            sender.sendMessage("해당 몬스터가 존재하지 않음");
-            return;
-        }
-        entityDataMap.get(key).custom_name = PluginUtil.CombineRestArgstoString(args, 3);
-        sender.sendMessage("몬스터 이름 설정");
+    public void SetEntityCustomName(int codeIndex){
+        EntityData data = getEntityData(args[codeIndex]);
+        if (data == null) return;
+        if (checkArgsLength(4)) return;
+        data.custom_name = PluginUtil.CombineRestArgstoString(args, 3);
+        sendMessage("몬스터 이름 설정");
 
 
     }
-    private void SetEntityCustomNameVisible(){
-        if (args.length < 4) return;
-        String key = args[2];
-        if (!entityDataMap.containsKey(key)){
-            sender.sendMessage("해당 몬스터가 존재하지 않음");
-            return;
-        }
-        Boolean value = PluginUtil.parseBool(args[3]);
-        if (value == null){
-            sender.sendMessage("올바른 값 입력");
-            return;
-        }
-        entityDataMap.get(key).custom_name_visible = value;
-        sender.sendMessage("몬스터 이름 보여지는 여부 설정");
-
+    public void SetEntityCustomNameVisible(int codeIndex){
+        if (checkArgsLength(4)) return;
+        EntityData data = getEntityData(args[2]);
+        if (data == null) return;
+        Boolean value = parseBool(args[3]);
+        if (value == null) return;
+        data.custom_name_visible = value;
+        sendMessage("몬스터 이름 보여지는 여부 설정");
     }
+
 
 }

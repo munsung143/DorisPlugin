@@ -20,7 +20,7 @@ import java.util.Map;
 public final class Main extends JavaPlugin {
     public static Plugin plugin;
     private static YamlConfiguration messageYaml;
-    private File entityDataYmlFile;
+    private static File entityDataYmlFile;
     private YamlConfiguration entityDataYaml;
     private Map<String, EntityData> entityDataMap;
 
@@ -44,8 +44,10 @@ public final class Main extends JavaPlugin {
         }
         messageYaml = YamlConfiguration.loadConfiguration(new InputStreamReader(stream));
         createDataFile();
-        getCommand("도").setExecutor(new ItemSettingCommandTabCompleter());
-        getCommand("도").setTabCompleter(new ItemSettingCommandTabCompleter());
+        getCommand("도").setExecutor(new ItemSettingCommandExecutor());
+        getCommand("도").setTabCompleter(new ItemSettingCommandExecutor());
+        getCommand("bos").setExecutor(new EntitySettingCommandExecutor(entityDataMap));
+        getCommand("bos").setTabCompleter(new EntitySettingCommandExecutor(null));
     }
 
     private void createDataFile() {
@@ -77,16 +79,13 @@ public final class Main extends JavaPlugin {
             sender.sendMessage(line);
         }
     }
-
-
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("bos")) {
-            if (!sender.isOp()) return false;
-            EntitySettingCommandManager manager = new EntitySettingCommandManager(sender, args, entityDataMap, entityDataYmlFile);
-            manager.Start();
+    public static boolean SaveEntityData(YamlConfiguration config){
+        try {
+            config.save(entityDataYmlFile);
             return true;
+        } catch (IOException e){
+            return false;
         }
-        return  false;
     }
 
 

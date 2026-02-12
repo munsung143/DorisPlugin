@@ -1,11 +1,8 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.enums;
 
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
-import org.bukkit.potion.PotionEffectType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public enum UseAnimationType {

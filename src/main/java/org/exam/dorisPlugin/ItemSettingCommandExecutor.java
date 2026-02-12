@@ -6,19 +6,22 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
+import org.exam.dorisPlugin.enums.AttributeType;
+import org.exam.dorisPlugin.enums.EffectType;
+import org.exam.dorisPlugin.enums.EnchantType;
+import org.exam.dorisPlugin.enums.FunctionalBlockType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ItemSettingCommandTabCompleter implements TabCompleter, CommandExecutor {
+public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor {
 
     private ItemSettingCommandManager manager;
     private String[] args;
+    private String[] compArgs;
     private CommandSender sender;
     private List<String> tabComplete;
     private int length;
@@ -67,27 +70,28 @@ public class ItemSettingCommandTabCompleter implements TabCompleter, CommandExec
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args){
-
+        if (!sender.isOp()) return null;
         tabComplete = new ArrayList<>();
         length = args.length;
-        if (length <= 1){
+        compArgs = args;
+        if (length == 1){
             defaultComp();
         }
-        else if (length <= 2){
+        else if (length >= 2){
             switch (args[0]){
                 case "인첸트": enchantComp(); break;
                 case "설명": loreComp(); break;
-                //case "속성": attributeComp(); break;
+                case "속성": attributeComp(); break;
                 //case "착용버프": potionPassiveComp(); break;
                 //case "공격버프": potionAttackComp(); break;
                 //case "착용": equipComp();break;
                 case "모델": modelComp(); break;
                 //case "내구도": durabilityComp(); break;
-                //case "포션": potionComp(); break;
+                case "포션": potionComp(); break;
                 //case "음식": foodComp(); break;
                 //case "소비": consumeComp(); break;
                 //case "쿨타임": cooldownComp(); break;
-                //case "방지" : preventComp(); break;
+                case "방지" : preventComp(); break;
                 default: break;
             }
         }
@@ -125,16 +129,64 @@ public class ItemSettingCommandTabCompleter implements TabCompleter, CommandExec
         }
     }
     private void loreComp(){
-        tabComplete.add("추가");
-        tabComplete.add("삭제");
-        tabComplete.add("삽입");
-        tabComplete.add("변경");
+        if (length == 2){
+            tabComplete.add("추가");
+            tabComplete.add("삭제");
+            tabComplete.add("제거");
+            tabComplete.add("삽입");
+            tabComplete.add("변경");
+        }
+    }
+    private void attributeComp(){
+        if (length == 2){
+            tabComplete.add("추가");
+            tabComplete.add("기본데미지");
+            tabComplete.add("기본공격속도");
+            tabComplete.add("초기화");
+            tabComplete.add("목록");
+        }
+        else if (length >= 3 && compArgs[1].equals("추가")){
+            if (length == 3){
+                for (AttributeType a : AttributeType.values()){
+                    tabComplete.add(a.toString());
+                }
+            }
+            else if (length == 4) {
+                for (SlotType a : SlotType.values()) {
+                    tabComplete.add(a.toString());
+                }
+            }
+            else if (length == 5){
+                tabComplete.add("더하기");
+                tabComplete.add("곱하기");
+                tabComplete.add("누적곱하기");
+            }
+
+        }
+    }
+    private void potionComp(){
+        if (length == 2) {
+            tabComplete.add("추가");
+            tabComplete.add("제거");
+        }
+        else if (length == 3){
+            for (EffectType e : EffectType.values()){
+                tabComplete.add(e.toString());
+            }
+        }
+    }
+    private void preventComp(){
+        if (length == 2){
+            for (FunctionalBlockType e : FunctionalBlockType.values()){
+                tabComplete.add(e.toString());
+            }
+        }
     }
     private void SetItemLore(){
         if (CheckArgsLength(2, "messages.do.lore.usage")) return;
         switch (args[1]){
             case "추가": manager.AddLore(); break;
-            case "삭제": manager.DeleteLore(); break;
+            case "제거","삭제": manager.DeleteLore(); break;
             case "삽입", "변경": manager.InsertLore(); break;
             default: sendMessage("messages.do.lore.usage"); break;
         }
@@ -192,8 +244,9 @@ public class ItemSettingCommandTabCompleter implements TabCompleter, CommandExec
     private void SetPotion(){
         if (CheckArgsLength(2, "messages.do.potion.usage")) return;
         switch (args[1]){
+            case "추가": manager.AddPotion(); break;
             case "제거": manager.RemovePotion(); break;
-            default: manager.AddPotion(); break;
+            default: sendMessage("messages.do.potion.usage"); break;
         }
     }
     private void SetFood(){

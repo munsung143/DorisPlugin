@@ -1,4 +1,4 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.enums;
 
 import java.util.HashMap;
 import java.util.Map;
