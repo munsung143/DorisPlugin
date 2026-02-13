@@ -35,60 +35,69 @@ public final class EntityDataSerializer {
             if (typeStr != null){
                 data.type = entityTypeRegistry.get(NamespacedKey.minecraft(typeStr));
             }
-            data.custom_name = section.getString(EntityData.customNameStr);
-            data.custom_name_visible = section.getBoolean(EntityData.customNameVisibleStr);
-            data.fire = (short)section.getInt(EntityData.fireStr);
-            data.glowing = section.getBoolean(EntityData.glowingStr);
-            data.has_visual_fire = section.getBoolean(EntityData.hasVisualFireStr);
-            data.invulnerable = section.getBoolean(EntityData.invulnerableStr);
-            data.no_gravity = section.getBoolean(EntityData.noGravityStr);
-            data.silent = section.getBoolean(EntityData.silentStr);
-            data.passengers = section.getStringList(EntityData.passengersStr);
-            data.absorption_amount = (float)section.getDouble(EntityData.absorptionAmountStr);
-            List<Map<?,?>> potionMapList = section.getMapList(EntityData.activeEffectsStr);
-            if (!potionMapList.isEmpty()){
-                data.active_effects = new ArrayList<>(0);
-                for (Map<?,?> m : potionMapList){
-                    PotionEffectType type = effectTypeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
-                    if (type == null) continue;
-                    int duration = (int)m.get("duration");
-                    int amplifier = (int)m.get("amplifier");
-                    data.active_effects.add(new PotionEffect(type, duration, amplifier));
+            if (section.contains(EntityData.customNameStr)) data.custom_name = section.getString(EntityData.customNameStr);
+            if (section.contains(EntityData.customNameVisibleStr)) data.custom_name_visible = section.getBoolean(EntityData.customNameVisibleStr);
+            if (section.contains(EntityData.fireStr)) data.fire = (short)section.getInt(EntityData.fireStr);
+            if (section.contains(EntityData.glowingStr)) data.glowing = section.getBoolean(EntityData.glowingStr);
+            if (section.contains(EntityData.hasVisualFireStr)) data.has_visual_fire = section.getBoolean(EntityData.hasVisualFireStr);
+            if (section.contains(EntityData.invulnerableStr)) data.invulnerable = section.getBoolean(EntityData.invulnerableStr);
+            if (section.contains(EntityData.noGravityStr)) data.no_gravity = section.getBoolean(EntityData.noGravityStr);
+            if (section.contains(EntityData.silentStr)) data.silent = section.getBoolean(EntityData.silentStr);
+            if (section.contains(EntityData.passengersStr)) data.passengers = section.getStringList(EntityData.passengersStr);
+            if (section.contains(EntityData.absorptionAmountStr)) data.absorption_amount = (float)section.getDouble(EntityData.absorptionAmountStr);
+            if (section.contains(EntityData.activeEffectsStr)){
+                List<Map<?,?>> potionMapList = section.getMapList(EntityData.activeEffectsStr);
+                if (!potionMapList.isEmpty()){
+                    data.active_effects = new ArrayList<>(0);
+                    for (Map<?,?> m : potionMapList){
+                        PotionEffectType type = effectTypeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
+                        if (type == null) continue;
+                        int duration = (int)m.get("duration");
+                        int amplifier = (int)m.get("amplifier");
+                        data.active_effects.add(new PotionEffect(type, duration, amplifier));
+                    }
                 }
             }
-            List<Map<?,?>> attributeMapList = section.getMapList(EntityData.attributesStr);
-            if (!attributeMapList.isEmpty()){
-                data.attributes = new ArrayList<>(0);
-                for (Map<?,?> m : attributeMapList){
-                    Attribute type = attributeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
-                    if (type == null) continue;
-                    double base = (double)m.get("base");
-                    data.attributes.add(new EntityData.BaseAttribute(type, base));
+            if (section.contains(EntityData.attributesStr)){
+                List<Map<?,?>> attributeMapList = section.getMapList(EntityData.attributesStr);
+                if (!attributeMapList.isEmpty()){
+                    data.attributes = new ArrayList<>(0);
+                    for (Map<?,?> m : attributeMapList){
+                        Attribute type = attributeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
+                        if (type == null) continue;
+                        double base = (double)m.get("base");
+                        data.attributes.add(new EntityData.BaseAttribute(type, base));
+                    }
+                }
+
+            }
+            if (section.contains(EntityData.dropChancesStr)){
+                List<Double> dcList = section.getDoubleList(EntityData.dropChancesStr);
+                if (!dcList.isEmpty()){
+                    data.drop_chances = new ArrayList<>();
+                    for (double d : dcList){
+                        data.drop_chances.add((float)d);
+                    }
                 }
             }
-            List<Double> dcList = section.getDoubleList(EntityData.dropChancesStr);
-            if (!dcList.isEmpty()){
-                data.drop_chances = new ArrayList<>();
-                for (double d : dcList){
-                    data.drop_chances.add((float)d);
+            if (section.contains(EntityData.equipmentStr)){
+                ConfigurationSection equipSection = section.getConfigurationSection(EntityData.equipmentStr);
+                if (equipSection != null){
+                    data.equipment = new EntityData.EquipItemStacks();
+                    data.equipment.head = equipSection.getItemStack("head");
+                    data.equipment.chest = equipSection.getItemStack("chest");
+                    data.equipment.legs = equipSection.getItemStack("legs");
+                    data.equipment.feet = equipSection.getItemStack("feet");
+                    data.equipment.mainhand = equipSection.getItemStack("mainhand");
+                    data.equipment.offhand = equipSection.getItemStack("offhand");
                 }
             }
-            ConfigurationSection equipSection = section.getConfigurationSection(EntityData.equipmentStr);
-            if (equipSection != null){
-                data.equipment = new EntityData.EquipItemStacks();
-                data.equipment.head = equipSection.getItemStack("head");
-                data.equipment.chest = equipSection.getItemStack("chest");
-                data.equipment.legs = equipSection.getItemStack("legs");
-                data.equipment.feet = equipSection.getItemStack("feet");
-                data.equipment.mainhand = equipSection.getItemStack("mainhand");
-                data.equipment.offhand = equipSection.getItemStack("offhand");
-            }
-            data.can_pick_up_loot = section.getBoolean(EntityData.canPickUpLootStr);
-            data.left_handed = section.getBoolean(EntityData.leftHandedStr);
-            data.no_ai = section.getBoolean("no_ai");
-            data.persistence_required = section.getBoolean("persistence_required");
-            data.death_loot_table = section.getString("death_loot_table");
-            data.health = (float)section.getDouble("health");
+            if (section.contains(EntityData.canPickUpLootStr)) data.can_pick_up_loot = section.getBoolean(EntityData.canPickUpLootStr);
+            if (section.contains(EntityData.leftHandedStr)) data.left_handed = section.getBoolean(EntityData.leftHandedStr);
+            if (section.contains(EntityData.noAIStr)) data.no_ai = section.getBoolean("no_ai");
+            if (section.contains(EntityData.persistenceRequiredStr)) data.persistence_required = section.getBoolean("persistence_required");
+            if (section.contains(EntityData.deathLootTableStr)) data.death_loot_table = section.getString("death_loot_table");
+            if (section.contains(EntityData.healthStr)) data.health = (float)section.getDouble("health");
 
             deSerializedData.put(key, data);
         }
@@ -116,11 +125,11 @@ public final class EntityDataSerializer {
             if (value.invulnerable != null) section.set("invulnerable", value.invulnerable);
             if (value.no_gravity != null) section.set("no_gravity", value.no_gravity);
             if (value.silent != null) section.set("silent", value.silent);
-            if (!value.passengers.isEmpty()) section.set("passengers", value.passengers);
+            if (value.passengers != null && !value.passengers.isEmpty()) section.set("passengers", value.passengers);
             if (value.absorption_amount != null) section.set("absorption_amount", value.absorption_amount);
 
-            if (!value.active_effects.isEmpty()){
-                ConfigurationSection effectsection = section.getConfigurationSection("active_effects");
+            if (value.active_effects != null && !value.active_effects.isEmpty()){
+                ConfigurationSection effectsection = section.createSection("active_effects");
                 for (PotionEffect p : value.active_effects){
                     if (p == null) continue;
                     effectsection.set("name", p.getType().getKey().getKey());
@@ -128,25 +137,25 @@ public final class EntityDataSerializer {
                     effectsection.set("amplifier", p.getAmplifier());
                 }
             }
-            if (!value.attributes.isEmpty()){
-                ConfigurationSection attributeSection = section.getConfigurationSection("attributes");
+            if (value.attributes != null && !value.attributes.isEmpty()){
+                ConfigurationSection attributeSection = section.createSection("attributes");
                 for (EntityData.BaseAttribute b : value.attributes){
                     if (b == null) continue;
                     attributeSection.set("name", b.attribute.getKey().getKey());
                     attributeSection.set("base", b.base);
                 }
             }
-            if (!value.drop_chances.isEmpty()){
+            if (value.drop_chances != null && !value.drop_chances.isEmpty()){
                 section.set("drop_chances", value.drop_chances);
             }
             if (value.equipment != null){
-                ConfigurationSection equipmentSection = section.getConfigurationSection("equipment");
-                if (value.equipment.head != null) equipmentSection.set("head", value.equipment.head.serialize());
-                if (value.equipment.chest != null) equipmentSection.set("chest", value.equipment.chest.serialize());
-                if (value.equipment.legs != null) equipmentSection.set("legs", value.equipment.legs.serialize());
-                if (value.equipment.feet != null) equipmentSection.set("feet", value.equipment.feet.serialize());
-                if (value.equipment.mainhand != null) equipmentSection.set("mainhand", value.equipment.mainhand.serialize());
-                if (value.equipment.offhand != null) equipmentSection.set("offhand", value.equipment.offhand.serialize());
+                ConfigurationSection equipmentSection = section.createSection("equipment");
+                if (value.equipment.head != null) equipmentSection.set("head", value.equipment.head);
+                if (value.equipment.chest != null) equipmentSection.set("chest", value.equipment.chest);
+                if (value.equipment.legs != null) equipmentSection.set("legs", value.equipment.legs);
+                if (value.equipment.feet != null) equipmentSection.set("feet", value.equipment.feet);
+                if (value.equipment.mainhand != null) equipmentSection.set("mainhand", value.equipment.mainhand);
+                if (value.equipment.offhand != null) equipmentSection.set("offhand", value.equipment.offhand);
             }
 
             if (value.can_pick_up_loot != null) section.set("can_pick_up_loot", value.can_pick_up_loot);

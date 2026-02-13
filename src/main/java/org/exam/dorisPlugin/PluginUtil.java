@@ -70,6 +70,14 @@ public class PluginUtil {
             return null;
         }
     }
+    public static Short parseShort(String arg, short min, short max) {
+        try {
+            short value = Short.parseShort(arg);
+            return value >= min && value <= max ? value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public static Float parseFloat(String arg, float min, float max){
         try {
             float value = Float.parseFloat(arg);
