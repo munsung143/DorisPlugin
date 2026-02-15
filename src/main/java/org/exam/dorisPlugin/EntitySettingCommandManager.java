@@ -9,9 +9,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.Inventory;
 
 import java.util.ArrayList;
@@ -111,7 +109,51 @@ public class EntitySettingCommandManager {
         if (data.custom_name != null){
             entity.customName(new TextFormatBuilder(data.custom_name).Build());
         }
-        entity.setCustomNameVisible(data.custom_name_visible);
+        if (data.custom_name_visible != null){
+            entity.setCustomNameVisible(data.custom_name_visible);
+        }
+        if (data.fire != null){
+            entity.setFireTicks(data.fire);
+        }
+        if (data.glowing != null){
+            entity.setGlowing(data.glowing);
+        }
+        if (data.has_visual_fire != null){
+            entity.setVisualFire(data.has_visual_fire);
+        }
+        if (data.invulnerable != null){
+            entity.setInvulnerable(data.invulnerable);
+        }
+        if (data.no_gravity != null){
+            entity.setNoPhysics(data.no_gravity);
+        }
+        if (data.silent != null){
+            entity.setSilent(data.silent);
+        }
+        if (data.persistence_required != null){
+            entity.setPersistent(data.persistence_required);
+        }
+        if (entity instanceof Damageable damageable){
+            if (data.absorption_amount != null){
+                damageable.setAbsorptionAmount(data.absorption_amount);
+            }
+            if (data.health != null){
+                damageable.setHealth(data.health);
+            }
+        }
+        if (entity instanceof LivingEntity livingEntity){
+            if (data.can_pick_up_loot != null){
+                livingEntity.setCanPickupItems(data.can_pick_up_loot);
+            }
+            if (data.no_ai != null){
+                livingEntity.setAI(data.no_ai);
+            }
+        }
+        if (entity instanceof Mob mob){
+            if (data.left_handed != null){
+                mob.setLeftHanded(data.left_handed);
+            }
+        }
     }
     public void Save(){
         YamlConfiguration config =  EntityDataSerializer.Serialize(entityDataMap);
