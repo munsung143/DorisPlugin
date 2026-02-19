@@ -156,7 +156,7 @@ public class EntitySettingCommandManager {
         }
     }
     public void Save(){
-        YamlConfiguration config =  EntityDataSerializer.Serialize(entityDataMap);
+        YamlConfiguration config =  DataSerializer.entityDataSerialize(entityDataMap);
         if (Main.SaveEntityData(config)){
             sender.sendMessage("저장 성공");
         }

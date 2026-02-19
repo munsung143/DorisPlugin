@@ -2,7 +2,6 @@ package org.exam.dorisPlugin;
 
 
 import org.bukkit.Server;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -23,6 +22,10 @@ public final class Main extends JavaPlugin {
     private static File entityDataYmlFile;
     private YamlConfiguration entityDataYaml;
     private Map<String, EntityData> entityDataMap;
+
+    private File randomDataYmlFile;
+    private YamlConfiguration randomTableYaml;
+    private Map<String, RandomTable> randomTableMap;
 
 
     @Override
@@ -49,6 +52,7 @@ public final class Main extends JavaPlugin {
         getCommand("도").setTabCompleter(new ItemSettingCommandExecutor());
         getCommand("bos").setExecutor(new EntitySettingCommandExecutor(entityDataMap));
         getCommand("bos").setTabCompleter(new EntitySettingCommandExecutor(null));
+        getCommand("랜덤").setExecutor(new RandomCommandManager(randomTableMap));
     }
 
     private void createDataFile() {
@@ -65,7 +69,18 @@ public final class Main extends JavaPlugin {
             }
         }
         entityDataYaml = YamlConfiguration.loadConfiguration(entityDataYmlFile);
-        entityDataMap = EntityDataSerializer.Deserialize(entityDataYaml);
+        entityDataMap = DataSerializer.entityDataDeserialize(entityDataYaml);
+
+        randomDataYmlFile = new File(getDataFolder(), "RandomData.yml");
+        if (!randomDataYmlFile.exists()) {
+            try {
+                randomDataYmlFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        randomTableYaml = YamlConfiguration.loadConfiguration(randomDataYmlFile);
+        //randomDataMap = DataSerializer.entityDataDeserialize(randomDataYaml);
 
     }
 

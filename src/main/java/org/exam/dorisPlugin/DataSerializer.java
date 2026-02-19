@@ -10,20 +10,19 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class EntityDataSerializer {
+public final class DataSerializer {
 
     private final static Registry<EntityType> entityTypeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENTITY_TYPE);
     private final static Registry<PotionEffectType> effectTypeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT);
     private final static Registry<Attribute> attributeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ATTRIBUTE);
 
-    public static Map<String, EntityData> Deserialize(YamlConfiguration snapshot){
+    public static Map<String, EntityData> entityDataDeserialize(YamlConfiguration snapshot){
         RegistryAccess RegiAccess = RegistryAccess.registryAccess();
         Map<String, EntityData> deSerializedData = new HashMap<>();
 
@@ -103,7 +102,7 @@ public final class EntityDataSerializer {
         }
         return deSerializedData;
     }
-    public static YamlConfiguration Serialize(Map<String, EntityData> entityData){
+    public static YamlConfiguration entityDataSerialize(Map<String, EntityData> entityData){
         YamlConfiguration config = new YamlConfiguration();
         for (Map.Entry<String, EntityData> e : entityData.entrySet()){
             String key = e.getKey();
@@ -167,6 +166,43 @@ public final class EntityDataSerializer {
 
         }
         return config;
+    }
+
+
+
+    public static Map<String, RandomTable> randomDataDeserialize(YamlConfiguration snapshot){
+        Map<String, RandomTable> deSerializedData = new HashMap<>();
+
+        for (String key : snapshot.getKeys(false)){
+            ConfigurationSection section = snapshot.getConfigurationSection(key);
+            RandomTable data = new RandomTable();
+            if (section == null) continue;
+            if (section.contains("groups")){
+                List<Map<?,?>> groups = section.getMapList("groups");
+                if (groups.isEmpty()) continue;
+                data.groups = new ArrayList<>();
+                for (Map<?,?> g : groups){
+                    RandomGroup group = new RandomGroup();
+                    group.weight = (int)g.get("weight");
+                    group.message = (String)g.get("message");
+                    List<?> items = (List<?>)g.get("items");
+
+                    //if (items.isEmpty())
+//
+                    //for (Object obj : items) {
+                    //    if (obj instanceof ItemStack item) {
+                    //        group.items.add(item);
+                    //    }
+                    //}
+
+
+                }
+            }
+
+
+            deSerializedData.put(key, data);
+        }
+        return deSerializedData;
     }
 
 }

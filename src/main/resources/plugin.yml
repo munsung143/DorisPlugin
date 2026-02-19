@@ -9,3 +9,6 @@ commands:
   bos:
     description: 엔티티 설정
     usage: /bos
+  랜덤:
+    description: 랜덤 설정
+    usage: /랜덤
