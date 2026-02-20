@@ -8,6 +8,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -175,34 +176,60 @@ public final class DataSerializer {
 
         for (String key : snapshot.getKeys(false)){
             ConfigurationSection section = snapshot.getConfigurationSection(key);
-            RandomTable data = new RandomTable();
+            RandomTable table = new RandomTable();
             if (section == null) continue;
             if (section.contains("groups")){
                 List<Map<?,?>> groups = section.getMapList("groups");
                 if (groups.isEmpty()) continue;
-                data.groups = new ArrayList<>();
+                table.groups = new ArrayList<>();
                 for (Map<?,?> g : groups){
                     RandomGroup group = new RandomGroup();
                     group.weight = (int)g.get("weight");
                     group.message = (String)g.get("message");
                     List<?> items = (List<?>)g.get("items");
-
-                    //if (items.isEmpty())
-//
-                    //for (Object obj : items) {
-                    //    if (obj instanceof ItemStack item) {
-                    //        group.items.add(item);
-                    //    }
-                    //}
-
-
+                    if (items != null && !items.isEmpty()){
+                        group.stacks = new ArrayList<>();
+                        for (Object obj : items) {
+                            if (obj instanceof ItemStack item) {
+                                group.stacks.add(item);
+                            }
+                        }
+                    }
+                    table.groups.add(group);
                 }
+                table.CalcSum();
             }
-
-
-            deSerializedData.put(key, data);
+            deSerializedData.put(key, table);
         }
         return deSerializedData;
+    }
+
+    public static YamlConfiguration randomTableSerialize(Map<String, RandomTable> randomData){
+        YamlConfiguration config = new YamlConfiguration();
+        for (Map.Entry<String, RandomTable> e : randomData.entrySet()){
+            String key = e.getKey();
+            RandomTable value = e.getValue();
+            ConfigurationSection section = config.createSection(key);
+            List<RandomGroup> groups = value.groups;
+            if (groups != null && !groups.isEmpty()){
+                List<Map<String, Object>> groupList = new ArrayList<>();
+                for (RandomGroup group : groups){
+                    Map<String, Object> groupMap = new HashMap<>();
+                    groupMap.put("weight", group.weight);
+                    String message = group.message;
+                    if (message != null){
+                        groupMap.put("message", message);
+                    }
+                    List<ItemStack> stacks = group.stacks;
+                    if (stacks != null && !stacks.isEmpty()){
+                        groupMap.put("items", stacks);
+                    }
+                    groupList.add(groupMap);
+                }
+                section.set("groups", groupList);
+            }
+        }
+        return config;
     }
 
 }

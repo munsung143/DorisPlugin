@@ -23,7 +23,7 @@ public final class Main extends JavaPlugin {
     private YamlConfiguration entityDataYaml;
     private Map<String, EntityData> entityDataMap;
 
-    private File randomDataYmlFile;
+    private static File randomDataYmlFile;
     private YamlConfiguration randomTableYaml;
     private Map<String, RandomTable> randomTableMap;
 
@@ -36,11 +36,6 @@ public final class Main extends JavaPlugin {
         Debug.log("doris plugin loaded");
         Server server = getServer();
         PluginManager manager = server.getPluginManager();
-        manager.registerEvents(new PotionPassiveEffector(), this);
-        manager.registerEvents(new PotionAttackEffector(), this);
-        manager.registerEvents(new RandomTeleport(), this);
-        manager.registerEvents(new FunctionalBlockPreventer(), this);
-        manager.registerEvents(new EntityEquipmentSettingInventoryClose(), this);
 
         InputStream stream = getResource("messages.yml");
         if (stream == null) {
@@ -48,11 +43,18 @@ public final class Main extends JavaPlugin {
         }
         messageYaml = YamlConfiguration.loadConfiguration(new InputStreamReader(stream));
         createDataFile();
+        manager.registerEvents(new PotionPassiveEffector(), this);
+        manager.registerEvents(new PotionAttackEffector(), this);
+        manager.registerEvents(new RandomTeleport(), this);
+        manager.registerEvents(new FunctionalBlockPreventer(), this);
+        manager.registerEvents(new SettingInventoryClose(this::saveRandomData), this);
+        manager.registerEvents(new RandomItemConsumer(randomTableMap), this);
+
         getCommand("도").setExecutor(new ItemSettingCommandExecutor());
         getCommand("도").setTabCompleter(new ItemSettingCommandExecutor());
         getCommand("bos").setExecutor(new EntitySettingCommandExecutor(entityDataMap));
         getCommand("bos").setTabCompleter(new EntitySettingCommandExecutor(null));
-        getCommand("랜덤").setExecutor(new RandomCommandManager(randomTableMap));
+        getCommand("랜덤").setExecutor(new RandomCommandManager(randomTableMap, this::saveRandomData));
     }
 
     private void createDataFile() {
@@ -80,7 +82,7 @@ public final class Main extends JavaPlugin {
             }
         }
         randomTableYaml = YamlConfiguration.loadConfiguration(randomDataYmlFile);
-        //randomDataMap = DataSerializer.entityDataDeserialize(randomDataYaml);
+        randomTableMap = DataSerializer.randomDataDeserialize(randomTableYaml);
 
     }
 
@@ -101,6 +103,14 @@ public final class Main extends JavaPlugin {
             return true;
         } catch (IOException e){
             return false;
+        }
+    }
+    public void saveRandomData(){
+        YamlConfiguration config =  DataSerializer.randomTableSerialize(randomTableMap);
+        try {
+            config.save(randomDataYmlFile);
+        } catch (IOException e){
+            return;
         }
     }
 
