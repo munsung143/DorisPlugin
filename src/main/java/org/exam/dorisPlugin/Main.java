@@ -54,7 +54,8 @@ public final class Main extends JavaPlugin {
         getCommand("도").setTabCompleter(new ItemSettingCommandExecutor());
         getCommand("bos").setExecutor(new EntitySettingCommandExecutor(entityDataMap));
         getCommand("bos").setTabCompleter(new EntitySettingCommandExecutor(null));
-        getCommand("랜덤").setExecutor(new RandomCommandManager(randomTableMap, this::saveRandomData));
+        getCommand("random").setExecutor(new RandomCommandManager(randomTableMap, this::saveRandomData));
+        getCommand("random").setTabCompleter(new RandomCommandTabCompleter(randomTableMap));
     }
 
     private void createDataFile() {

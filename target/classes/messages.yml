@@ -193,15 +193,17 @@ messages:
       - "/bos tag persistence <code>  <bool>"
   random:
     usage:
-       - "§e§l/랜덤 목록 §f§l- 랜덤 테이블 목록 확인"
-       - "§e§l/랜덤 추가 <이름> §f§l- 새로운 랜덤 테이블 추가"
-       - "§e§l/랜덤 적용 <이름> §f§l- 랜덤 테이블을 손에 든 아이템에 적용"
-       - "§e§l/랜덤 제거 <이름> §f§l- 랜덤 테이블 제거"
-       - "§e§l/랜덤 그룹 <이름> 추가 (가중치) §f§l- 랜덤 테이블에 새로운 그룹 추가"
-       - "§e§l/랜덤 그룹 <이름> 아이템 <번호> §f§l- 각 그룹의 아이템 설정"
-       - "§e§l/랜덤 그룹 <이름> 제거 <번호> §f§l- 테이블에서 그룹 제거"
-       - "§e§l/랜덤 그룹 <이름> 가중치 <번호> <가중치> §f§l- 각 그룹의 가중치 설정"
-       - "§e§l/랜덤 그룹 <이름> 메시지 <번호> <메시지> §f§l- 해당 그룹 뽑았을 때 출력 메시지"
+       - ""
+       - "§e§l/random list §f§l- 테이블 목록 확인"
+       - "§e§l/random add <이름> §f§l- 새로운 테이블 추가"
+       - "§e§l/random apply <이름> §f§l- 테이블을 손에 든 아이템에 적용"
+       - "§e§l/random remove <이름> §f§l- 테이블 제거"
+       - "§e§l/random group <이름> §f§l- 테이블의 모든 그룹 확인"
+       - "§e§l/random group <이름> add (가중치) §f§l- 테이블에 새로운 그룹 추가"
+       - "§e§l/random group <이름> item <번호> §f§l- 그룹의 아이템 설정"
+       - "§e§l/random group <이름> weight <번호> <가중치> §f§l- 그룹의 가중치 설정"
+       - "§e§l/random group <이름> message <번호> <메시지> §f§l- 그룹의 메시지 설정"
+       - "§e§l/random group <이름> remove <번호> §f§l- 그룹 제거"
     table_not_exist:
       - "§c해당 이름의 랜덤 테이블이 존재하지 않음"
     table_already_exist:
