@@ -1,15 +1,17 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Events;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.InventoryHolder;
+import org.exam.dorisPlugin.DataSerializer;
+import org.exam.dorisPlugin.EntityEquipmentInventoryHolder;
+import org.exam.dorisPlugin.RandomGroupItemsHolder;
 
 public class SettingInventoryClose implements Listener {
 
-    private Runnable saveFunc;
-    public SettingInventoryClose(Runnable saveFunc){
-        this.saveFunc = saveFunc;
+    public SettingInventoryClose(){
+
     }
 
     @EventHandler
@@ -20,7 +22,8 @@ public class SettingInventoryClose implements Listener {
         }
         else if (holder instanceof RandomGroupItemsHolder entityHolder){
             entityHolder.setData(event.getView().getTopInventory());
-            saveFunc.run();
+            DataSerializer.randomDataDeserialize();
+            DataSerializer.SaveRandomData();
 
         }
     }

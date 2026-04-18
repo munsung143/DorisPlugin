@@ -1,12 +1,9 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.enums;
 
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
-import org.bukkit.potion.PotionEffectType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public enum SlotType {

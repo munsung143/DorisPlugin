@@ -1,8 +1,8 @@
 package org.exam.dorisPlugin;
 
-import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.exam.dorisPlugin.Legacy.EntityData;
 import org.jetbrains.annotations.NotNull;
 
 public class EntityEquipmentInventoryHolder implements InventoryHolder {

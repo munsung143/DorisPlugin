@@ -1,8 +1,7 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Events;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -12,6 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.Main;
 import org.exam.dorisPlugin.enums.EffectType;
 
 import java.util.List;

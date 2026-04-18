@@ -12,6 +12,7 @@ public final class Debug {
     }
 
     public static void log(String msg) {
+
         if (logger != null) {
             logger.info(msg);
         }

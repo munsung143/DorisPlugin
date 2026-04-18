@@ -1,39 +1,106 @@
 package org.exam.dorisPlugin;
 
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.Legacy.EntityData;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class DataSerializer {
+    private static File entityDataYmlFile;
+    private static YamlConfiguration entityDataYml;
+    public static Map<String, EntityData> entityDataMap = new HashMap<>();
 
-    private final static Registry<EntityType> entityTypeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENTITY_TYPE);
-    private final static Registry<PotionEffectType> effectTypeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT);
-    private final static Registry<Attribute> attributeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ATTRIBUTE);
+    private static File randomDataYmlFile;
+    private static YamlConfiguration randomTableYml;
+    public static Map<String, RandomTable> randomTableMap = new HashMap<>();
 
-    public static Map<String, EntityData> entityDataDeserialize(YamlConfiguration snapshot){
-        RegistryAccess RegiAccess = RegistryAccess.registryAccess();
+    private static File itemSyncYmlFile;
+    private static YamlConfiguration itemSyncYml;
+    public static Map<String, ItemSyncData> itemSyncMap = new HashMap<>();
+    public static Map<String, String> itemSyncIdMap = new HashMap<>();
+
+
+    public static void LoadFile(File dataFolder){
+        entityDataYmlFile = new File(dataFolder, "EntityData.yml");
+        if (!entityDataYmlFile.exists()) {
+            try {
+                entityDataYmlFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        entityDataYml = YamlConfiguration.loadConfiguration(entityDataYmlFile);
+        entityDataDeserialize();
+
+        randomDataYmlFile = new File(dataFolder, "RandomData.yml");
+        if (!randomDataYmlFile.exists()) {
+            try {
+                randomDataYmlFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        randomTableYml = YamlConfiguration.loadConfiguration(randomDataYmlFile);
+        randomDataDeserialize();
+
+
+        itemSyncYmlFile = new File(dataFolder, "Item.yml");
+        if (!itemSyncYmlFile.exists()) {
+            try {
+                itemSyncYmlFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        itemSyncYml = YamlConfiguration.loadConfiguration(itemSyncYmlFile);
+        itemSyncDeserialize();
+    }
+
+    public static void SaveEntityData(){
+        try {
+            entityDataYml.save(entityDataYmlFile);
+
+        } catch (IOException e){
+            return;
+        }
+    }
+    public static void SaveRandomData(){
+        try {
+            randomTableYml.save(entityDataYmlFile);
+            return;
+        } catch (IOException e){
+            return;
+        }
+    }
+    public static void SaveItemSyncData(){
+        try{
+            itemSyncYml.save(itemSyncYmlFile);
+        } catch (IOException e){
+            return;
+        }
+    }
+
+    public static void entityDataDeserialize(){
         Map<String, EntityData> deSerializedData = new HashMap<>();
 
-        for (String key : snapshot.getKeys(false)){
-            ConfigurationSection section = snapshot.getConfigurationSection(key);
+        for (String key : entityDataYml.getKeys(false)){
+            ConfigurationSection section = entityDataYml.getConfigurationSection(key);
             EntityData data = new EntityData();
-            if (section == null) return null;
+            if (section == null) return;
             String typeStr = section.getString(EntityData.typeStr);
             if (typeStr != null){
-                data.type = entityTypeRegistry.get(NamespacedKey.minecraft(typeStr));
+                data.type = Registries.EntityType.get(NamespacedKey.minecraft(typeStr));
             }
             if (section.contains(EntityData.customNameStr)) data.custom_name = section.getString(EntityData.customNameStr);
             if (section.contains(EntityData.customNameVisibleStr)) data.custom_name_visible = section.getBoolean(EntityData.customNameVisibleStr);
@@ -50,7 +117,7 @@ public final class DataSerializer {
                 if (!potionMapList.isEmpty()){
                     data.active_effects = new ArrayList<>(0);
                     for (Map<?,?> m : potionMapList){
-                        PotionEffectType type = effectTypeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
+                        PotionEffectType type = Registries.MobEffect.get(NamespacedKey.minecraft((String)m.get("name")));
                         if (type == null) continue;
                         int duration = (int)m.get("duration");
                         int amplifier = (int)m.get("amplifier");
@@ -63,7 +130,7 @@ public final class DataSerializer {
                 if (!attributeMapList.isEmpty()){
                     data.attributes = new ArrayList<>(0);
                     for (Map<?,?> m : attributeMapList){
-                        Attribute type = attributeRegistry.get(NamespacedKey.minecraft((String)m.get("name")));
+                        Attribute type = Registries.Attribute.get(NamespacedKey.minecraft((String)m.get("name")));
                         if (type == null) continue;
                         double base = (double)m.get("base");
                         data.attributes.add(new EntityData.BaseAttribute(type, base));
@@ -101,11 +168,11 @@ public final class DataSerializer {
 
             deSerializedData.put(key, data);
         }
-        return deSerializedData;
+        entityDataMap = deSerializedData;
     }
-    public static YamlConfiguration entityDataSerialize(Map<String, EntityData> entityData){
+    public static void entityDataSerialize(){
         YamlConfiguration config = new YamlConfiguration();
-        for (Map.Entry<String, EntityData> e : entityData.entrySet()){
+        for (Map.Entry<String, EntityData> e : entityDataMap.entrySet()){
             String key = e.getKey();
             EntityData value = e.getValue();
             ConfigurationSection section = config.createSection(key);
@@ -166,16 +233,13 @@ public final class DataSerializer {
             if (value.health != null) section.set("health", value.health);
 
         }
-        return config;
+        entityDataYml = config;
     }
-
-
-
-    public static Map<String, RandomTable> randomDataDeserialize(YamlConfiguration snapshot){
+    public static void randomDataDeserialize(){
         Map<String, RandomTable> deSerializedData = new HashMap<>();
 
-        for (String key : snapshot.getKeys(false)){
-            ConfigurationSection section = snapshot.getConfigurationSection(key);
+        for (String key : randomTableYml.getKeys(false)){
+            ConfigurationSection section = randomTableYml.getConfigurationSection(key);
             RandomTable table = new RandomTable();
             if (section == null) continue;
             if (section.contains("groups")){
@@ -201,12 +265,12 @@ public final class DataSerializer {
             }
             deSerializedData.put(key, table);
         }
-        return deSerializedData;
+        randomTableMap = deSerializedData;
     }
 
-    public static YamlConfiguration randomTableSerialize(Map<String, RandomTable> randomData){
+    public static void randomTableSerialize(){
         YamlConfiguration config = new YamlConfiguration();
-        for (Map.Entry<String, RandomTable> e : randomData.entrySet()){
+        for (Map.Entry<String, RandomTable> e : randomTableMap.entrySet()){
             String key = e.getKey();
             RandomTable value = e.getValue();
             ConfigurationSection section = config.createSection(key);
@@ -229,7 +293,40 @@ public final class DataSerializer {
                 section.set("groups", groupList);
             }
         }
-        return config;
+        randomTableYml = config;
+    }
+
+    public static void itemSyncDeserialize(){
+        Map<String, ItemSyncData> deSerializedData = new HashMap<>();
+        Map<String, String> deSerializedIdData = new HashMap<>();
+
+        for (String key : itemSyncYml.getKeys(false)){
+            ConfigurationSection section = itemSyncYml.getConfigurationSection(key);
+            ItemSyncData table = new ItemSyncData();
+            if (section == null) continue;
+            table.version = section.getInt("version");
+            table.manageCode = section.getString("manage_code");
+            table.item = section.getItemStack("item");
+            table.asyncEnchant = section.getBoolean("async_enchant");
+            deSerializedData.put(key, table);
+            deSerializedIdData.put(section.getString("manage_code"), key);
+        }
+        itemSyncMap = deSerializedData;
+        itemSyncIdMap = deSerializedIdData;
+    }
+
+    public static void itemSyncSerialize(){
+        YamlConfiguration config = new YamlConfiguration();
+        for (Map.Entry<String, ItemSyncData> e : itemSyncMap.entrySet()){
+            String key = e.getKey();
+            ItemSyncData value = e.getValue();
+            ConfigurationSection section = config.createSection(key);
+            section.set("version", value.version);
+            section.set("manage_code", value.manageCode);
+            section.set("item", value.item);
+            section.set("async_enchant", value.asyncEnchant);
+        }
+        itemSyncYml = config;
     }
 
 }

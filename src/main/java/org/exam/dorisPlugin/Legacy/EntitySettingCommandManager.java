@@ -1,4 +1,4 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Legacy;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -8,9 +8,9 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.Inventory;
+import org.exam.dorisPlugin.*;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -156,14 +156,9 @@ public class EntitySettingCommandManager {
         }
     }
     public void Save(){
-        YamlConfiguration config =  DataSerializer.entityDataSerialize(entityDataMap);
-        if (Main.SaveEntityData(config)){
-            sender.sendMessage("저장 성공");
-        }
-        else{
-            sender.sendMessage("저장 실패");
-        }
-
+        DataSerializer.entityDataSerialize();
+        DataSerializer.SaveEntityData();
+        sender.sendMessage("저장 성공");
     }
     public <T> void SetValue(
             int codeLength,

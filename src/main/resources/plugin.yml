@@ -12,3 +12,9 @@ commands:
   random:
     description: 랜덤 설정
     usage: /random
+  랜덤추첨:
+    description: 유저 랜덤 추첨
+    usage: /랜덤추첨
+  is:
+    description: 아이템 동기화
+    usage: /is

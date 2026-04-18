@@ -1,6 +1,5 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Legacy;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;

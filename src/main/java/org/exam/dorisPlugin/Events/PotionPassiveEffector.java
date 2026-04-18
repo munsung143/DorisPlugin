@@ -1,4 +1,4 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Events;
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 import org.bukkit.NamespacedKey;
@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.Main;
 import org.exam.dorisPlugin.enums.EffectType;
 
 import java.util.*;

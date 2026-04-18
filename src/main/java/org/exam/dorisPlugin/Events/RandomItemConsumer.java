@@ -1,4 +1,4 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Events;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -9,20 +9,17 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.exam.dorisPlugin.*;
 
 import java.util.List;
 import java.util.Map;
 
 public class RandomItemConsumer implements Listener {
-    public static String keyString = "random";
     private Map<String, RandomTable> randomTableMap;
-    private NamespacedKey namespacedKey;
 
-    public RandomItemConsumer(Map<String, RandomTable> randomTableMap){
-        this.randomTableMap = randomTableMap;
-        namespacedKey = NamespacedKey.fromString(RandomItemConsumer.keyString, Main.plugin);
+    public RandomItemConsumer(){
+        this.randomTableMap = DataSerializer.randomTableMap;
     }
 
     @EventHandler
@@ -37,7 +34,7 @@ public class RandomItemConsumer implements Listener {
         ItemStack handItem = event.getItem();
         if (handItem == null) return;
         ItemMeta meta = handItem.getItemMeta();
-        String key = meta.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING);;
+        String key = meta.getPersistentDataContainer().get(DorisKeys.random, PersistentDataType.STRING);;
         if (key == null) return;
         if (!randomTableMap.containsKey(key)) return;
         if (action == Action.RIGHT_CLICK_BLOCK){
@@ -53,7 +50,16 @@ public class RandomItemConsumer implements Listener {
             if (select < sum){
                 Player p = event.getPlayer();
                 if (group.stacks != null){
-                    p.give(group.stacks);
+                    //p.give(group.stacks);
+                    for (ItemStack item : group.stacks){
+                        Map<Integer, ItemStack> left = p.getInventory().addItem(item);
+                        if (!left.isEmpty()){
+                            for (ItemStack remain : left.values()) {
+                                p.getWorld().dropItemNaturally(p.getLocation(), remain);
+                            }
+                        }
+
+                    }
                 }
                 if (group.message != null){
                     p.sendMessage(new TextFormatBuilder(group.message).Build());

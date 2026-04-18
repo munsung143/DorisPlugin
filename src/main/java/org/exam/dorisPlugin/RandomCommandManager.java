@@ -6,31 +6,25 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.exam.dorisPlugin.enums.FunctionalBlockType;
+import org.exam.dorisPlugin.Events.RandomItemConsumer;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public class RandomCommandManager implements CommandExecutor{
 
     private Map<String , RandomTable> randomTableMap;
     private String[] args;
     private Player sender;
-    private Runnable saveFunc;
 
-    public RandomCommandManager(Map<String, RandomTable> random, Runnable saveFunc){
-        this.randomTableMap = random;
-        this.saveFunc = saveFunc;
+    public RandomCommandManager(){
+        this.randomTableMap = DataSerializer.randomTableMap;
     }
     private void yamlMessage(String message){
         Main.sendMessage(message, sender);
@@ -63,13 +57,18 @@ public class RandomCommandManager implements CommandExecutor{
         }
         switch (args[0]){
             case "list": listTable(); break;
-            case "add": addTable(); break;
+            case "create": addTable(); break;
             case "remove": removeTable(); break;
             case "apply": apply(); break;
             case "group": setGroup(); break;
             default: yamlMessage("messages.random.usage"); break;
         }
         return true;
+    }
+
+    private void Save(){
+        DataSerializer.randomTableSerialize();
+        DataSerializer.SaveRandomData();
     }
     private void listTable(){
         senderMessage("");
@@ -91,7 +90,7 @@ public class RandomCommandManager implements CommandExecutor{
             yamlMessage("messages.random.table_already_exist"); return;
         }
         randomTableMap.put(key, new RandomTable());
-        saveFunc.run();
+        Save();
         yamlMessage("messages.random.add_table");
     }
 
@@ -104,7 +103,7 @@ public class RandomCommandManager implements CommandExecutor{
             yamlMessage("messages.random.table_not_exist"); return;
         }
         randomTableMap.remove(key);
-        saveFunc.run();
+        Save();
         yamlMessage("messages.random.remove_table");
     }
     private void setGroup(){
@@ -139,15 +138,12 @@ public class RandomCommandManager implements CommandExecutor{
         if (handItem.getType().isAir()) {
             senderMessage("§c손에 아이템들 들어야 함"); return;
         }
-        NamespacedKey namespacedKey = NamespacedKey.fromString(RandomItemConsumer.keyString, Main.plugin);
-        if (namespacedKey == null){
-            sender.sendMessage("§cundefined error"); return;
+        ItemSetter set = new ItemSetter(handItem);
+        ItemSetResult result = set.ApplyRandom(key);
+        sender.sendMessage(result.message);
+        if (result.success && result.sync){
+            sender.sendMessage("아이템 동기화 완료");
         }
-        ItemMeta meta = handItem.getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        container.set(namespacedKey, PersistentDataType.STRING, key);
-        handItem.setItemMeta(meta);
-        senderMessage("§a손에 든 아이템에 " + key + " 랜덤 테이블을 적용함");
     }
 
     private void listGroup(){
@@ -189,14 +185,14 @@ public class RandomCommandManager implements CommandExecutor{
         }
         table.groups.add(group);
         table.CalcSum();
-        openInventory(table, group);
-        saveFunc.run();
+        openInventory(table, group, table.groups.size() - 1);
+        Save();
         senderMessage("§a테이블에 그룹을 추가했습니다.");
     }
-    private void openInventory(RandomTable table, RandomGroup group){
+    private void openInventory(RandomTable table, RandomGroup group, int index){
         int weight = group.weight;
         float prob = (float)weight * 100 / table.weightSum;
-        Component title = Component.text(table.groups.size() + "번 그룹 아이템들, 가중치: " + group.weight + " (확률 " + String.format("%.3f", prob) + "%)");
+        Component title = Component.text(index + "번 그룹 아이템들, 가중치: " + group.weight + " (확률 " + String.format("%.3f", prob) + "%)");
         Inventory inv = Bukkit.createInventory(new RandomGroupItemsHolder(group), 9, title);
         sender.openInventory(inv);
         if (inv.getHolder() instanceof RandomGroupItemsHolder holder){
@@ -219,7 +215,7 @@ public class RandomCommandManager implements CommandExecutor{
         }
         groups.remove(index.intValue());
         table.CalcSum();
-        saveFunc.run();
+        Save();
         senderMessage("§a테이블에서 " + index + "번 인덱스 그룹을 제거했습니다.");
     }
 
@@ -242,7 +238,7 @@ public class RandomCommandManager implements CommandExecutor{
         }
         groups.get(index).weight = weight;
         table.CalcSum();
-        saveFunc.run();
+        Save();
         senderMessage("§a해당 그룹의 가중치를 " + weight +"로 수정했습니다");
     }
     private void setGroupMessage(){
@@ -259,8 +255,8 @@ public class RandomCommandManager implements CommandExecutor{
             senderMessage("§c범위를 벗어나거나 올바르지 않은 인덱스"); return;
         }
         groups.get(index).message = PluginUtil.CombineRestArgstoString(args, 4);
-        saveFunc.run();
-        senderMessage("§c해당 그룹의 메시지를 수정했습니다");
+        Save();
+        senderMessage("§a해당 그룹의 메시지를 수정했습니다");
     }
     private void setGroupItems(){
         if (argsNotContainIndex(3)){
@@ -276,7 +272,7 @@ public class RandomCommandManager implements CommandExecutor{
             senderMessage("§c범위를 벗어나거나 올바르지 않은 인덱스"); return;
         }
         RandomGroup group = groups.get(index);
-        openInventory(table, group);
+        openInventory(table, group, index);
     }
 
 }

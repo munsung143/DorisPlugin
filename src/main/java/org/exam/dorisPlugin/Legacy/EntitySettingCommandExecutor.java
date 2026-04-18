@@ -1,14 +1,14 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Legacy;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.exam.dorisPlugin.Main;
+import org.exam.dorisPlugin.PluginUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class EntitySettingCommandExecutor  implements CommandExecutor, TabCompleter {
     private EntitySettingCommandManager manager;

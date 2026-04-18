@@ -1,10 +1,9 @@
-package org.exam.dorisPlugin;
+package org.exam.dorisPlugin.Legacy;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
-import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -33,6 +32,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.*;
 import org.exam.dorisPlugin.enums.*;
 
 import java.util.*;
@@ -42,7 +42,6 @@ public class ItemSettingCommandManager {
     private String[] args;
     private CommandSender sender;
     private ItemStack handItem;
-    private RegistryAccess RegiAccess = RegistryAccess.registryAccess();
     private ItemMeta meta;
     private PlayerInventory inventory;
 
@@ -93,11 +92,6 @@ public class ItemSettingCommandManager {
         meta.customName(cmp);
         handItem.setItemMeta(meta);
         sender.sendMessage("§a아이템의 이름을 변경했습니다.");
-    }
-    public int getLoreSize(){
-        List<Component> existLores = meta.lore();
-        if (existLores == null) return 0;
-        return existLores.size();
     }
 
     public void AddLore(){
@@ -164,7 +158,7 @@ public class ItemSettingCommandManager {
             sender.sendMessage("§c잘못된 인첸트가 입력됨");
             return;
         }
-        Enchantment enchant = RegiAccess.getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(EnchantType.GetValue(args[1])));
+        Enchantment enchant = Registries.Enchantment.get(NamespacedKey.minecraft(EnchantType.GetValue(args[1])));
         if (enchant == null) return;
         Integer level = 1;
         if (args.length > 2){
@@ -184,7 +178,7 @@ public class ItemSettingCommandManager {
             sender.sendMessage("§c잘못된 속성이 입력됨");
             return;
         }
-        Attribute attribute = RegiAccess.getRegistry(RegistryKey.ATTRIBUTE).get(NamespacedKey.minecraft(AttributeType.GetValue(args[2])));
+        Attribute attribute = Registries.Attribute.get(NamespacedKey.minecraft(AttributeType.GetValue(args[2])));
         if (attribute == null){
             return;
         }
@@ -258,8 +252,7 @@ public class ItemSettingCommandManager {
         if (IsHandItemAir()) return;
         Integer amount = parseInt(args[1], 1, 64);
         if (amount == null) return;
-        meta.setMaxStackSize(amount);
-        handItem.setItemMeta(meta);
+        handItem.editMeta(meta -> meta.setMaxStackSize(amount));
     }
 
     public void SetItemColor(){
@@ -544,7 +537,7 @@ public class ItemSettingCommandManager {
     public void SetEquipSound(){
         if(CheckArgsLength(3, "messages.do.equip.usage")) return;
         if (IsHandItemAir()) return;
-        Sound sound = RegiAccess.getRegistry(RegistryKey.SOUND_EVENT).get(NamespacedKey.minecraft(args[2]));
+        Sound sound = Registries.SoundEvent.get(NamespacedKey.minecraft(args[2]));
         if (sound == null){
             sender.sendMessage("§c잘못된 소리가 입력됨");
             return;
@@ -954,13 +947,8 @@ public class ItemSettingCommandManager {
     public void SetPrevent(){
         if (CheckArgsLength(2, "messages.do.prevent.usage")) return;
         if (IsHandItemAir()) return;
-        NamespacedKey namespacedKey = NamespacedKey.fromString(FunctionalBlockPreventer.keyString, Main.plugin);
-        if (namespacedKey == null){
-            sender.sendMessage("undefined error");
-            return;
-        }
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        Integer mask = container.get(namespacedKey, PersistentDataType.INTEGER);
+        Integer mask = container.get(DorisKeys.prevent, PersistentDataType.INTEGER);
         if (mask == null) mask = 0;
         Integer shift = FunctionalBlockType.name2Mask(args[1]);
         if (shift == null){
@@ -986,7 +974,7 @@ public class ItemSettingCommandManager {
                 sender.sendMessage("§b해당 기능 블록 사용 가능하게 설정됨");
             }
         }
-        container.set(namespacedKey, PersistentDataType.INTEGER, mask);
+        container.set(DorisKeys.prevent, PersistentDataType.INTEGER, mask);
         handItem.setItemMeta(meta);
     }
 }

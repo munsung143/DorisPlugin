@@ -195,7 +195,7 @@ messages:
     usage:
        - ""
        - "§e§l/random list §f§l- 테이블 목록 확인"
-       - "§e§l/random add <이름> §f§l- 새로운 테이블 추가"
+       - "§e§l/random create <이름> §f§l- 새로운 테이블 생성"
        - "§e§l/random apply <이름> §f§l- 테이블을 손에 든 아이템에 적용"
        - "§e§l/random remove <이름> §f§l- 테이블 제거"
        - "§e§l/random group <이름> §f§l- 테이블의 모든 그룹 확인"
@@ -204,13 +204,23 @@ messages:
        - "§e§l/random group <이름> weight <번호> <가중치> §f§l- 그룹의 가중치 설정"
        - "§e§l/random group <이름> message <번호> <메시지> §f§l- 그룹의 메시지 설정"
        - "§e§l/random group <이름> remove <번호> §f§l- 그룹 제거"
+  is:
+    usage:
+      - ""
+      - "§a§l/is list §f§l- 아이템 코드 목록 확인"
+      - "§a§l/is create <코드> <아이템> §f§l- 새로운 동기화 아이템 생성"
+      - "§a§l/is remove <코드> §f§l- 동기화 아이템 제거"
+      - "§a§l/is get <코드> §f§l- 동기화 아이템 가져오기"
+      - "§a§l/is info §f§l- 현재 들고 있는 아이템 정보 확인"
+      - "§a§l/is info <코드> §f§l- 코드를 입력해 정보 확인"
+      - "§a§l/is enchantasync <코드> <true/false> §f§l- 해당 아이템 인첸트 동기화 전환"
     table_not_exist:
-      - "§c해당 이름의 랜덤 테이블이 존재하지 않음"
+      - "§c해당 코드가 존재하지 않음"
     table_already_exist:
-      - "§c해당 이름의 랜덤 테이블이 이미 존재함"
+      - "§c해당 코드가 이미 존재함"
     need_table_name:
       - "§c테이블 이름을 입력하시오"
     add_table:
-      - "§a테이블을 추가했습니다"
+      - "§a아이템을 추가했습니다"
     remove_table:
-      - "§a테이블을 제거했습니다"
+      - "§a아이템을 제거했습니다"

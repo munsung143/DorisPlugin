@@ -23,8 +23,8 @@ public class RandomCommandTabCompleter implements TabCompleter {
     private int length;
     private String[] compArgs;
 
-    public RandomCommandTabCompleter(Map<String, RandomTable> random){
-        this.randomTableMap = random;
+    public RandomCommandTabCompleter(){
+        this.randomTableMap = DataSerializer.randomTableMap;
     }
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args){
@@ -49,7 +49,7 @@ public class RandomCommandTabCompleter implements TabCompleter {
 
     private void defaultComp(){
         tabComplete.add("list");
-        tabComplete.add("add");
+        tabComplete.add("create");
         tabComplete.add("apply");
         tabComplete.add("remove");
         tabComplete.add("group");
