@@ -1,10 +1,14 @@
 package org.exam.dorisPlugin;
 
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.exam.dorisPlugin.enums.EffectType;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ItemSettingPersonal {
 
@@ -29,7 +33,7 @@ public class ItemSettingPersonal {
     private boolean CheckValidity(int index, String message){
         if (args.length > index){
             if (handItem.getType().isAir()){
-                sender.sendMessage("아이템을 들어주새요");
+                sender.sendMessage("아이템을 들어주세요");
                 return false;
             }
             return true;
@@ -72,6 +76,7 @@ public class ItemSettingPersonal {
             } break;
             case "착용버프": SetPotionPassive(1); break;
             case "공격버프": SetPotionAttack(1); break;
+            case "사용버프": SetPotionUse(1); break;
             case "착용": SetEquip(1);break;
             case "모델": if (CheckValidity(1, "messages.do.model.usage")){
                 handleResult(set.SetModel(args[1]));
@@ -85,6 +90,14 @@ public class ItemSettingPersonal {
             case "방지" : if (CheckValidity(1, "messages.do.prevent.usage")){
                 handleResult(set.SetPrevent(args[1]));
             } break;
+            case "랜덤데미지" : if (CheckValidity(1, "messages.do.random_damage.usage")){
+                handleResult(set.SetRandomDamage(args[1]));
+            } break;
+            case "숨김" : if (CheckValidity(1, "messages.do.hide.usage")){
+                handleResult(set.SetItemFlag(args[1]));
+            } break;
+            case "인첸트빛" : handleResult(set.SetEnchantGlint()); break;
+            case "설치방지" : handleResult(set.SetPreventPlace()); break;
             default: yamlMessage(message); break;
         }
     }
@@ -140,8 +153,34 @@ public class ItemSettingPersonal {
             case "제거": if (CheckValidity(req + 2, "messages.do.potion_passive.usage")){
                 handleResult(set.RemovePotionPassive(args[req + 1], args[req + 2]));
             } break;
-            case "확인": break;
+            case "확인": PotionPassiveCheck(); break;
             default: yamlMessage(message); break;
+        }
+    }
+
+    public void PotionPassiveCheck(){
+        if (!CheckValidity(0, "")) return;
+        PersistentDataContainer container = handItem.getItemMeta().getPersistentDataContainer();
+        PassiveCheck("§b착용 효과:", "potion_passive_armor", container);
+        PassiveCheck("§b오른손 효과:", "potion_passive_mainhand", container);
+        PassiveCheck("§b왼손 효과:", "potion_passive_offhand", container);
+    }
+    private void PassiveCheck(String title, String keyName, PersistentDataContainer container){
+        NamespacedKey key = NamespacedKey.fromString(keyName, Main.plugin);
+        List<int[]> list = container.get(key, PersistentDataType.LIST.integerArrays());
+        sender.sendMessage(title);
+        if (list == null){
+            sender.sendMessage("없음");
+        }
+        else{
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < list.size(); i++){
+                sb.append(EffectType.GetName(list.get(i)[0]));
+                sb.append(" ");
+                sb.append(list.get(i)[1]);
+                sender.sendMessage(sb.toString());
+                sb.setLength(0);
+            }
         }
     }
     public void SetPotionAttack(int req){
@@ -156,8 +195,102 @@ public class ItemSettingPersonal {
             case "제거": if (CheckValidity(req + 2, "messages.do.potion_attack.usage")){
                 handleResult(set.RemovePotionAttack(args[req + 1], args[req + 2]));
             } break;
-            case "확인":  break;
+            case "확인":  PotionAttackCheck(); break;
             default: yamlMessage(message); break;
+        }
+    }
+    public void PotionAttackCheck(){
+        if (!CheckValidity(0, "")) return;
+        PersistentDataContainer container = handItem.getItemMeta().getPersistentDataContainer();
+        AttackCheck("§b착용 효과:", "potion_attack_armor", container);
+        AttackCheck("§b오른손 효과:", "potion_attack_mainhand", container);
+        AttackCheck("§b왼손 효과:", "potion_attack_offhand", container);
+    }
+    private void AttackCheck(String title, String keyName, PersistentDataContainer container){
+        NamespacedKey key = NamespacedKey.fromString(keyName, Main.plugin);
+        List<int[]> list = container.get(key, PersistentDataType.LIST.integerArrays());
+        sender.sendMessage(title);
+        if (list == null){
+            sender.sendMessage("없음");
+        }
+        else{
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < list.size(); i++){
+                sb.append(EffectType.GetName(list.get(i)[0]));
+                sb.append(" 레벨: ");
+                sb.append(list.get(i)[1]);
+                sb.append(" 지속시간: ");
+                sb.append(list.get(i)[2]);
+                sb.append(" 확률: ");
+                sb.append(list.get(i)[3]);
+                sender.sendMessage(sb.toString());
+                sb.setLength(0);
+            }
+        }
+    }
+    public void SetPotionUse(int req){
+        String message = "messages.do.potion_use.usage";
+        if (!CheckArgsLength(req, message)) {
+            sender.sendMessage(Arrays.toString(EffectType.values())); return;
+        }
+        switch (args[req]){
+            case "추가": if (CheckValidity(req + 6, "messages.do.potion_use.usage")){
+                handleResult(set.AddPotionUse(args[req + 1], args[req + 2], args[req + 3], args[req + 4], args[req + 5], args[req + 6]));
+            } break;
+            case "제거": if (CheckValidity(req + 1, "messages.do.potion_use.usage")){
+                handleResult(set.RemovePotionUse(args[req + 1]));
+            } break;
+            case "내구도": if (CheckValidity(req + 1, "messages.do.potion_use.usage")){
+                handleResult(set.SetPotionUseDurability(args[req + 1]));
+            } break;
+            case "확인": PotionUseCheck(); break;
+            default: yamlMessage(message); break;
+        }
+    }
+    public void PotionUseCheck(){
+        if (!CheckValidity(0, "")) return;
+        PersistentDataContainer loot = handItem.getItemMeta().getPersistentDataContainer().get(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER);
+        if (loot == null){
+            sender.sendMessage("없음");
+        }
+        else{
+            var list = loot.get(DorisKeys.potion_use_list, PersistentDataType.LIST.integerArrays());
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < list.size(); i++){
+                sb.append(EffectType.GetName(list.get(i)[0]));
+                sb.append(" 레벨: ");
+                sb.append(list.get(i)[1]);
+                sb.append(" 지속시간: ");
+                sb.append(list.get(i)[2]);
+                sb.append(" 확률: ");
+                sb.append(list.get(i)[3]);
+                sb.append(" 쿨타임: ");
+                sb.append(list.get(i)[4]);
+                sender.sendMessage(sb.toString());
+                sb.setLength(0);
+            }
+        }
+    }
+    private void UseCheck(String title, String keyName, PersistentDataContainer container){
+        NamespacedKey key = NamespacedKey.fromString(keyName, Main.plugin);
+        List<int[]> list = container.get(key, PersistentDataType.LIST.integerArrays());
+        sender.sendMessage(title);
+        if (list == null){
+            sender.sendMessage("없음");
+        }
+        else{
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < list.size(); i++){
+                sb.append(EffectType.GetName(list.get(i)[0]));
+                sb.append(" 레벨: ");
+                sb.append(list.get(i)[1]);
+                sb.append(" 지속시간: ");
+                sb.append(list.get(i)[2]);
+                sb.append(" 확률: ");
+                sb.append(list.get(i)[3]);
+                sender.sendMessage(sb.toString());
+                sb.setLength(0);
+            }
         }
     }
 

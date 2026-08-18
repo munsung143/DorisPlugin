@@ -48,16 +48,16 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
                 case "인첸트": enchantComp(); break;
                 case "설명": loreComp(); break;
                 case "속성": attributeComp(); break;
-                //case "착용버프": potionPassiveComp(); break;
-                //case "공격버프": potionAttackComp(); break;
-                //case "착용": equipComp();break;
                 case "모델": modelComp(); break;
-                //case "내구도": durabilityComp(); break;
                 case "포션": potionComp(); break;
-                //case "음식": foodComp(); break;
-                //case "소비": consumeComp(); break;
-                //case "쿨타임": cooldownComp(); break;
                 case "방지" : preventComp(); break;
+                case "숨김" : itemFlagComp(); break;
+
+                case "음식" : foodComp(); break;
+                case "착용버프" : potionPassiveComp(); break;
+                case "공격버프" : potionAttackComp(); break;
+                case "사용버프" : potionUseComp(); break;
+                case "소비" : consumeComp(); break;
                 default: break;
             }
         }
@@ -74,6 +74,7 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
         tabComplete.add("스택");
         tabComplete.add("착용버프");
         tabComplete.add("공격버프");
+        tabComplete.add("사용버프");
         tabComplete.add("착용");
         tabComplete.add("모델");
         tabComplete.add("내구도");
@@ -83,6 +84,10 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
         tabComplete.add("쿨타임");
         tabComplete.add("잔여물");
         tabComplete.add("방지");
+        tabComplete.add("랜덤데미지");
+        tabComplete.add("숨김");
+        tabComplete.add("인첸트빛");
+        tabComplete.add("설치방지");
     }
     private void enchantComp(){
         for (EnchantType e : EnchantType.values()){
@@ -101,6 +106,40 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
             tabComplete.add("제거");
             tabComplete.add("삽입");
             tabComplete.add("변경");
+        }
+    }
+    private void consumeComp(){
+        if (length == 2){
+            tabComplete.add("설정");
+            tabComplete.add("시간");
+            tabComplete.add("소리");
+            tabComplete.add("애니메이션");
+            tabComplete.add("파티클");
+            tabComplete.add("포션");
+            tabComplete.add("포션해제");
+            tabComplete.add("소리효과");
+            tabComplete.add("이동거리");
+            tabComplete.add("모든포션해제");
+        }
+        else if (length >= 3 && compArgs[1].equals("포션")){
+            if (length == 3){
+                tabComplete.add("추가");
+                tabComplete.add("제거");
+                tabComplete.add("확률");
+            }
+        }
+        else if (length >= 3 && compArgs[1].equals("포션해제")){
+            if (length == 3){
+                tabComplete.add("추가");
+                tabComplete.add("제거");
+            }
+        }
+    }
+    private void foodComp(){
+        if (length == 2){
+            tabComplete.add("회복량");
+            tabComplete.add("포만도");
+            tabComplete.add("항상");
         }
     }
     private void attributeComp(){
@@ -127,7 +166,123 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
                 tabComplete.add("곱하기");
                 tabComplete.add("누적곱하기");
             }
-
+        }
+    }
+    private void potionPassiveComp(){
+        if (length == 2){
+            tabComplete.add("추가");
+            tabComplete.add("제거");
+            tabComplete.add("확인");
+        }
+        else if (length >= 3 && compArgs[1].equals("추가")){
+            if (length == 3){
+                tabComplete.add("갑옷");
+                tabComplete.add("오른손");
+                tabComplete.add("왼손");
+            }
+            else if (length == 4) {
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+            else if (length == 5){
+                tabComplete.add("<레벨>");
+            }
+        }
+        else if (length >= 3 && compArgs[1].equals("제거")){
+            if (length == 3){
+                tabComplete.add("갑옷");
+                tabComplete.add("오른손");
+                tabComplete.add("왼손");
+            }
+            else if (length == 4) {
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+        }
+    }
+    private void potionAttackComp(){
+        if (length == 2){
+            tabComplete.add("추가");
+            tabComplete.add("제거");
+            tabComplete.add("확인");
+        }
+        else if (length >= 3 && compArgs[1].equals("추가")){
+            if (length == 3){
+                tabComplete.add("갑옷");
+                tabComplete.add("오른손");
+                tabComplete.add("왼손");
+            }
+            else if (length == 4) {
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+            else if (length == 5){
+                tabComplete.add("<레벨>");
+            }
+            else if (length == 6){
+                tabComplete.add("<지속시간>");
+            }
+            else if (length == 7){
+                tabComplete.add("<확률>");
+            }
+        }
+        else if (length >= 3 && compArgs[1].equals("제거")){
+            if (length == 3){
+                tabComplete.add("갑옷");
+                tabComplete.add("오른손");
+                tabComplete.add("왼손");
+            }
+            else if (length == 4) {
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+        }
+    }
+    private void potionUseComp(){
+        if (length == 2){
+            tabComplete.add("추가");
+            tabComplete.add("제거");
+            tabComplete.add("내구도");
+            tabComplete.add("확인");
+        }
+        else if (length >= 3 && compArgs[1].equals("추가")){
+            if (length == 3){
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+            else if (length == 4){
+                tabComplete.add("<레벨>");
+            }
+            else if (length == 5){
+                tabComplete.add("<지속시간>");
+            }
+            else if (length == 6){
+                tabComplete.add("<확률>");
+            }
+            else if (length == 7){
+                tabComplete.add("<쿨타임>");
+            }
+            else if (length == 8){
+                tabComplete.add("0");
+                tabComplete.add("1");
+            }
+        }
+        else if (length >= 3 && compArgs[1].equals("제거")){
+            if (length == 3){
+                for (EffectType e : EffectType.values()){
+                    tabComplete.add(e.toString());
+                }
+            }
+        }
+        else if (length >= 3 && compArgs[1].equals("내구도")){
+            if (length == 3){
+                tabComplete.add("<내구도>");
+            }
         }
     }
     private void potionComp(){
@@ -144,6 +299,13 @@ public class ItemSettingCommandExecutor implements TabCompleter, CommandExecutor
     private void preventComp(){
         if (length == 2){
             for (FunctionalBlockType e : FunctionalBlockType.values()){
+                tabComplete.add(e.toString());
+            }
+        }
+    }
+    private void itemFlagComp(){
+        if (length == 2){
+            for (ItemFlagType e : ItemFlagType.values()){
                 tabComplete.add(e.toString());
             }
         }

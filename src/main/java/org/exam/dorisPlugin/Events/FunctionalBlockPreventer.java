@@ -3,6 +3,7 @@ package org.exam.dorisPlugin.Events;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -40,6 +41,14 @@ public class FunctionalBlockPreventer implements Listener {
         if (((mask & shift) != 0)){
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void OnPlace(BlockPlaceEvent event){
+        if (event.getItemInHand().getItemMeta().getPersistentDataContainer().get(DorisKeys.place_prevention, PersistentDataType.INTEGER) != null){
+            event.setCancelled(true);
+        }
+
     }
 
 }

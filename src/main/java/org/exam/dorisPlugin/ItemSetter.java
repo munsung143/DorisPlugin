@@ -9,6 +9,7 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -17,11 +18,9 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.*;
 import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.inventory.meta.components.UseCooldownComponent;
@@ -29,11 +28,13 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.exam.dorisPlugin.Events.PotionUseEffector;
 import org.exam.dorisPlugin.enums.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ItemSetter {
 
@@ -185,7 +186,7 @@ public class ItemSetter {
         Enchantment enchant = Registries.Enchantment.get(NamespacedKey.minecraft(EnchantType.GetValue(type)));
         int level = PluginUtil.parseInt2(levelArg, 0, 32767, 1);
 
-        if (syncData.asyncEnchant){
+        if (syncData != null && syncData.asyncEnchant){
             targetItem = defaultItem;
             result.sync = false;
         }
@@ -229,7 +230,7 @@ public class ItemSetter {
         sb.append(operation.name().toLowerCase());
         NamespacedKey key = NamespacedKey.fromString(sb.toString(), Main.plugin);
 
-        double amount = PluginUtil.parseDouble2(amountArg, Double.MIN_VALUE, Double.MAX_VALUE, 1);
+        double amount = PluginUtil.parseDouble2(amountArg, -Double.MAX_VALUE, Double.MAX_VALUE, 1);
         double targetAmount = (operation != AttributeModifier.Operation.ADD_NUMBER) ? amount / 100 : amount;
 
         targetItem.editMeta(meta -> {
@@ -261,7 +262,7 @@ public class ItemSetter {
     }
 
     public ItemSetResult SetBaseAttribute(String typeArg, String amountArg) {
-        double amount = PluginUtil.parseDouble2(amountArg, Double.MIN_VALUE, Double.MAX_VALUE, 1);
+        double amount = PluginUtil.parseDouble2(amountArg, -Double.MAX_VALUE, Double.MAX_VALUE, 1);
 
         targetItem.editMeta(meta -> {
             Attribute attribute = Attribute.ATTACK_DAMAGE;
@@ -276,13 +277,15 @@ public class ItemSetter {
             AttributeModifier modifier = new AttributeModifier(key, amount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND);
 
             meta.removeAttributeModifier(attribute, modifier);
+            meta.addAttributeModifier(attribute, modifier);
+            result.setSuccess(new StringBuilder("§a아이템의 ").append(typeArg).append("이(가) ").append(amount).append("(으)로 설정됨").toString());
 
-            if (amount != 0) {
-                meta.addAttributeModifier(attribute, modifier);
-                result.setSuccess(new StringBuilder("§a아이템의 ").append(typeArg).append("이(가) ").append(amount).append("(으)로 설정됨").toString());
-            } else {
-                result.setSuccess(new StringBuilder("§a아이템의 ").append(typeArg).append(" 속성이 제거됨").toString());
-            }
+            //if (amount != 0) {
+            //    meta.addAttributeModifier(attribute, modifier);
+            //    result.setSuccess(new StringBuilder("§a아이템의 ").append(typeArg).append("이(가) ").append(amount).append("(으)로 설정됨").toString());
+            //} else {
+            //    result.setSuccess(new StringBuilder("§a아이템의 ").append(typeArg).append(" 속성이 제거됨").toString());
+            //}
         });
 
         updateSyncVersion();
@@ -307,7 +310,7 @@ public class ItemSetter {
             Color color = null;
             if (!colorArg.equalsIgnoreCase("초기화")) {
                 if (!PluginUtil.IsRGB(colorArg)) {
-                    result.setFail("§c잘못된 RGB 형식입니다. (예: 255,255,255)");
+                    result.setFail("§c잘못된 RGB 형식입니다. (예: ff0000)");
                     return;
                 }
                 color = PluginUtil.RGBToColor(colorArg);
@@ -333,13 +336,13 @@ public class ItemSetter {
     }
 
     public ItemSetResult AddPotionPassive(String slotArg, String typeArg, String levelArg) {
-        String key = "potion_attack_mainhand";
+        String key = "potion_passive_mainhand";
         switch (slotArg) {
             case "갑옷":
-                key = "potion_attack_armor";
+                key = "potion_passive_armor";
                 break;
             case "왼손":
-                key = "potion_attack_offhand";
+                key = "potion_passive_offhand";
                 break;
             default:
                 break;
@@ -389,13 +392,13 @@ public class ItemSetter {
     }
 
     public ItemSetResult RemovePotionPassive(String slotArg, String typeArg) {
-        String key = "potion_attack_mainhand";
+        String key = "potion_passive_mainhand";
         switch (slotArg) {
             case "갑옷":
-                key = "potion_attack_armor";
+                key = "potion_passive_armor";
                 break;
             case "왼손":
-                key = "potion_attack_offhand";
+                key = "potion_passive_offhand";
                 break;
             default:
                 break;
@@ -563,6 +566,126 @@ public class ItemSetter {
             result.setSuccess(new StringBuilder("§a아이템 [")
                     .append(slotArg).append("] 슬롯에서 ")
                     .append(typeArg).append(" 공격 효과를 제거함").toString());
+        });
+
+        if (result.success) updateSyncVersion();
+        return result;
+    }
+
+    public ItemSetResult AddPotionUse(String typeArg, String levelArg, String durationArg, String chanceArg, String CoolArg, String sneakArg) {
+        if (!EffectType.HasCode(typeArg)) {
+            return result.setFail(new StringBuilder("§c존재하지 않는 포션 효과입니다: ").append(typeArg).toString());
+        }
+
+        int effectCode = EffectType.GetCode(typeArg);
+        int level = PluginUtil.parseInt2(levelArg, 0, 32767, 0);
+        int duration = PluginUtil.parseInt2(durationArg, 1, Integer.MAX_VALUE, 100);
+        int chance = PluginUtil.parseInt2(chanceArg, 1, 1000, 100);
+        int cooldown = PluginUtil.parseInt2(CoolArg, 0, Integer.MAX_VALUE, 0);
+        int sneak = PluginUtil.parseInt2(sneakArg, 0, 1, 0);
+
+        targetItem.editMeta(meta -> {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            if (!container.has(DorisKeys.potion_use)){
+                container.set(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER, container.getAdapterContext().newPersistentDataContainer());
+            }
+            PersistentDataContainer loot = container.get(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER);
+            List<int[]> list = loot.get(DorisKeys.potion_use_list, PersistentDataType.LIST.integerArrays());
+
+            if (list == null) {
+                list = new ArrayList<>();
+                int r = ThreadLocalRandom.current().nextInt(Integer.MIN_VALUE, Integer.MAX_VALUE);
+                loot.set(DorisKeys.potion_use_code, PersistentDataType.INTEGER, r);
+                loot.set(DorisKeys.potion_use_dur, PersistentDataType.INTEGER, 0);
+            } else {
+                list = new ArrayList<>(list);
+            }
+            int i = 0;
+            for (; i < list.size(); i++) {
+                if (list.get(i)[0] == effectCode) {
+                    list.get(i)[1] = level;
+                    list.get(i)[2] = duration;
+                    list.get(i)[3] = chance;
+                    list.get(i)[4] = cooldown;
+                    list.get(i)[5] = sneak;
+                    break;
+                }
+            }
+            if (i == list.size()) {
+                list.add(new int[]{effectCode, level, duration, chance, cooldown, sneak});
+            }
+            loot.set(DorisKeys.potion_use_list, PersistentDataType.LIST.integerArrays(), list);
+            container.set(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER, loot);
+
+            PotionUseEffector.PotionUseItemData.remove(loot.get(DorisKeys.potion_use_code, PersistentDataType.INTEGER));
+
+            result.setSuccess(new StringBuilder("§a아이템에 [")
+                    .append(typeArg).append(" 사용 포션 효과 적용됨 (")
+                    .append(chance / 10.0).append("% 확률)").toString());
+        });
+
+        updateSyncVersion();
+        return result;
+    }
+    public ItemSetResult SetPotionUseDurability(String durArg){
+        int durability = PluginUtil.parseInt2(durArg, 0, 32767, 0);
+        targetItem.editMeta(meta -> {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            if (!container.has(DorisKeys.potion_use)){
+                result.setFail("해당 아이템은 포션 사용 효과를 가지고 있지 않습니다.");
+                return;
+            }
+            PersistentDataContainer loot = container.get(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER);
+            loot.set(DorisKeys.potion_use_dur, PersistentDataType.INTEGER, durability);
+            container.set(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER, loot);
+
+            result.setSuccess(new StringBuilder("§a아이템에 사용 포션 내구도 감소량 적용 : ")
+                    .append(durability).toString());
+        });
+        if (result.success) updateSyncVersion();
+        return result;
+    }
+
+    public ItemSetResult RemovePotionUse(String typeArg) {
+        if (!EffectType.HasCode(typeArg)) {
+            return result.setFail(new StringBuilder("§c존재하지 않는 포션 효과입니다: ").append(typeArg).toString());
+        }
+        int effectCode = EffectType.GetCode(typeArg);
+
+        targetItem.editMeta(meta -> {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            PersistentDataContainer loot = container.get(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER);
+            List<int[]> list = loot.get(DorisKeys.potion_use_list, PersistentDataType.LIST.integerArrays());
+
+            if (list == null) {
+                result.setFail("§c해당 아이템에 사용 포션 효과가 없습니다.");
+                return;
+            }
+
+            int i = 0;
+            boolean found = false;
+            for (i = 0; i < list.size(); i++) {
+                if (list.get(i)[0] == effectCode) {
+                    list.remove(i);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                result.setFail(new StringBuilder("§c제거할 공격 효과(").append(typeArg).append(")를 찾을 수 없습니다.").toString());
+                return;
+            }
+
+            if (list.isEmpty()) {
+                container.remove(DorisKeys.potion_use);
+            } else {
+                loot.set(DorisKeys.potion_use_list, PersistentDataType.LIST.integerArrays(), list);
+                container.set(DorisKeys.potion_use, PersistentDataType.TAG_CONTAINER, loot);
+            }
+
+            result.setSuccess(new StringBuilder("§a아이템에서 [")
+                    .append(typeArg).append(" 사용포션 효과 제거함").toString());
         });
 
         if (result.success) updateSyncVersion();
@@ -1260,6 +1383,71 @@ public class ItemSetter {
         if (result.success) updateSyncVersion();
         return result;
     }
+    public ItemSetResult SetRandomDamage(String DamageArg) {
+        targetItem.editMeta(meta -> {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            Double v = PluginUtil.parseDouble2(DamageArg, -1000000, 1000000, Double.MAX_VALUE);
+            if (v == Double.MAX_VALUE) {
+                result.setFail(new StringBuilder("§c잘못된 값이 입력되었습니다. ").toString());
+                return;
+            }
+            container.set(DorisKeys.randomDamage, PersistentDataType.DOUBLE, v);
+            result.setSuccess(new StringBuilder("§a랜덤 추가 데미지 ").append(v).append(" 적용됨").toString());
+        });
+
+        if (result.success) updateSyncVersion();
+        return result;
+    }
+    public ItemSetResult SetPreventPlace() {
+        targetItem.editMeta(meta -> {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            if (container.get(DorisKeys.place_prevention, PersistentDataType.INTEGER) == null){
+                container.set(DorisKeys.place_prevention, PersistentDataType.INTEGER, 1);
+                result.setSuccess(new StringBuilder("§a아이템을 설치할 수 없도록 설정됨").toString());
+            }
+            else{
+                container.remove(DorisKeys.place_prevention);
+                result.setSuccess(new StringBuilder("§a아이템을 다시 설치할 수 있습니다").toString());
+            }
+        });
+
+        if (result.success) updateSyncVersion();
+        return result;
+    }
+    public ItemSetResult SetItemFlag(String FlagArg) {
+        ItemFlag flag = ItemFlagType.GetFlag(FlagArg);
+        if (flag == null){
+            result.setFail("잘못된 플래그입니다.");
+            return result;
+        }
+        if (targetItem.hasItemFlag(flag)){
+            targetItem.removeItemFlags(flag);
+            result.setSuccess(new StringBuilder("§a플래그를 제거했습니다: ").append(FlagArg).toString());
+        }
+        else{
+            targetItem.addItemFlags(flag);
+            result.setSuccess(new StringBuilder("§a플래그를 추가했습니다: ").append(FlagArg).toString());
+        }
+        if (result.success) updateSyncVersion();
+        return result;
+    }
+
+    public ItemSetResult SetEnchantGlint() {
+        targetItem.editMeta(meta -> {
+            if (!meta.hasEnchantmentGlintOverride() || !meta.getEnchantmentGlintOverride()){
+                meta.setEnchantmentGlintOverride(true);
+                result.setSuccess(new StringBuilder("§a아이템의 인첸트 빛 효과 켜짐").toString());
+            }
+            else {
+                meta.setEnchantmentGlintOverride(false);
+                result.setSuccess(new StringBuilder("§a아이템의 인첸트 빛 효과 꺼짐").toString());
+            }
+        });
+
+        updateSyncVersion();
+        return result;
+    }
+
 
     public ItemSetResult ApplyRandom(String randomKey){
         ItemMeta meta = targetItem.getItemMeta();

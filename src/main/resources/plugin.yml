@@ -18,3 +18,6 @@ commands:
   is:
     description: 아이템 동기화
     usage: /is
+  dt:
+    description: 딜 테스트
+    usage: /dt

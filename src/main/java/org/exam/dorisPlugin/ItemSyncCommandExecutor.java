@@ -127,7 +127,7 @@ public class ItemSyncCommandExecutor implements CommandExecutor {
         item.editMeta(meta -> {
             PersistentDataContainer container = meta.getPersistentDataContainer();
             // 빈 container를 전달하여 빈 공간 생성
-            container.set(DorisKeys.sync, PersistentDataType.TAG_CONTAINER, container);
+            container.set(DorisKeys.sync, PersistentDataType.TAG_CONTAINER, container.getAdapterContext().newPersistentDataContainer());
             PersistentDataContainer loot = container.get(DorisKeys.sync, PersistentDataType.TAG_CONTAINER);
             loot.set(DorisKeys.sync_code, PersistentDataType.STRING, code);
             loot.set(DorisKeys.sync_version, PersistentDataType.INTEGER, data.version);

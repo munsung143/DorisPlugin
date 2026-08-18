@@ -56,11 +56,13 @@ public enum EffectType {
     private static final Map<String, Integer> To_Code = new HashMap<>();
     private static final List<PotionEffectType> To_Type = new ArrayList<>();
     private static final List<String> To_Name = new ArrayList<>();
+    private static final Map<PotionEffectType, String> To_Name_From_Type = new HashMap<>();
     static {
         for (EffectType s : values()) {
             To_Code.put(s.name(), s.code);
             To_Type.add(s.type);
             To_Name.add(s.name());
+            To_Name_From_Type.put(s.type, s.name());
         }
     }
     private EffectType(int code, PotionEffectType type){
@@ -79,4 +81,5 @@ public enum EffectType {
     public static String GetName(int code){
         return To_Name.get(code);
     }
+    public static String GetName(PotionEffectType type) {return To_Name_From_Type.get(type);}
 }

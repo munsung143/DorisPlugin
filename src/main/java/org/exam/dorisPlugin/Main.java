@@ -46,11 +46,13 @@ public final class Main extends JavaPlugin {
     private void RegisterEvents(PluginManager manager){
         manager.registerEvents(new PotionPassiveEffector(), this);
         manager.registerEvents(new PotionAttackEffector(), this);
-        manager.registerEvents(new RandomTeleport(), this);
+        manager.registerEvents(new MenuUIOpener(), this);
         manager.registerEvents(new FunctionalBlockPreventer(), this);
         manager.registerEvents(new SettingInventoryClose(), this);
         manager.registerEvents(new RandomItemConsumer(), this);
         manager.registerEvents(new ItemSyncer(), this);
+        manager.registerEvents(new AttackEffector(), this);
+        manager.registerEvents(new PotionUseEffector(), this);
     }
 
     private void SetCommands(){
@@ -63,6 +65,7 @@ public final class Main extends JavaPlugin {
         getCommand("랜덤추첨").setExecutor(new RandomGiveCommandExecutor());
         getCommand("is").setExecutor(new ItemSyncCommandExecutor());
         getCommand("is").setTabCompleter(new ItemSyncCommandTabCompleter());
+        getCommand("dt").setExecutor(new DamageTestCommandExecutor());
     }
 
     @Override

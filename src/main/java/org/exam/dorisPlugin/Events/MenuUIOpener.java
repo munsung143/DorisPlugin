@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -24,8 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class RandomTeleport implements Listener {
-    private static final Map<UUID, Boolean> playerSneakState = new HashMap<>();
+public class MenuUIOpener implements Listener {
+    public static final Map<UUID, Boolean> playerSneakState = new HashMap<>();
     private static final Component title = new TextFormatBuilder("&2메뉴").Build();
 
     @EventHandler
@@ -51,6 +52,10 @@ public class RandomTeleport implements Listener {
     @EventHandler
     public void OnExit(PlayerQuitEvent event){
         playerSneakState.remove(event.getPlayer().getUniqueId());
+    }
+    @EventHandler
+    public void OnJoin(PlayerJoinEvent event){
+        playerSneakState.put(event.getPlayer().getUniqueId(), false);
     }
 
     @EventHandler
